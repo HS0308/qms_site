@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>WFM – Time Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --sidebar:#001B6C;--sidebar2:#001055;--sidebar-t:rgba(255,255,255,.72);
+  --bg:#F4F6FA;--surface:#FFFFFF;--surface2:#F0F3F9;
+  --blue:#001B6C;--blue-light:#E6EAF5;--blue-dark:#001055;
+  --green:#2DC48D;--green-l:#E8F9F3;
+  --red:#C0392B;--red-l:#FCEAE8;
+  --amber:#F5A623;--amber-l:#FEF6E8;
+  --purple:#cd3281;--purple-l:rgba(205,50,129,.12);
+  --bdr:#E2E8F0;--bdr2:#EDF1F7;
+  --text:#1A202C;--text2:#4A5568;--text3:#A0AEC0;
+  --r:8px;--rl:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Calibri',Calibri,sans-serif}
+html,body{height:100%;overflow:hidden;background:var(--bg)}
+.app{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+.sb{width:220px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.sb-logo{padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.12)}
+.sb-logo-title{font-size:16px;font-weight:700;color:#fff;letter-spacing:.02em}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+.sb-sec{font-size:9px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;padding:.9rem 1.25rem .3rem}
+.sb-nav{flex:1;padding:.4rem 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:.58rem 1.25rem;color:var(--sidebar-t);font-size:13px;cursor:pointer;transition:background .15s}
+.nav-item:hover{background:rgba(255,255,255,.08)}
+.nav-item.active{background:rgba(255,255,255,.15);color:#fff;font-weight:600}
+.nav-item svg{flex-shrink:0;opacity:.8}
+.nav-item.active svg{opacity:1}
+.sb-foot{padding:.9rem 1.25rem;border-top:1px solid rgba(255,255,255,.12)}
+.sb-foot-lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.sb-sel{width:100%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:12px;padding:6px 8px;border-radius:6px;outline:none;cursor:pointer}
+.sb-sel option{background:var(--sidebar)}
+.sb-btn{margin-top:5px;width:100%;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);color:#fff;font-size:11px;padding:5px;border-radius:6px;cursor:pointer;transition:background .15s}
+.sb-btn:hover{background:rgba(255,255,255,.25)}
+
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 1.5rem;gap:1rem;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:700;color:var(--text);flex:1}
+.topbar-date{font-size:12px;color:var(--text2)}
+.topbar-clock{font-size:15px;font-weight:700;color:var(--blue);background:var(--blue-light);padding:4px 10px;border-radius:6px;font-variant-numeric:tabular-nums}
+.content{flex:1;overflow-y:auto;padding:1.5rem}
+
+.page{display:none}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--bdr);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px}
+.b-green{background:var(--green-l);color:#1a7a52}
+.b-red{background:var(--red-l);color:var(--red)}
+.b-amber{background:var(--amber-l);color:#b07d10}
+.b-blue{background:var(--blue-light);color:var(--blue)}
+.b-purple{background:var(--purple-l);color:var(--purple)}
+.b-gray{background:var(--surface2);color:var(--text3)}
+
+/* ACTION BUTTONS */
+.action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:.9rem;margin-bottom:1rem}
+.act-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:1.1rem .8rem;border-radius:var(--rl);border:2px solid transparent;cursor:pointer;transition:all .15s;font-weight:700;font-size:13px;background:none}
+.act-btn svg{width:26px;height:26px}
+.act-btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-ci{background:var(--green-l);color:#1a7a52;border-color:#2DC48D33}
+.btn-ci:not(:disabled):hover{background:var(--green);color:#fff}
+.btn-br{background:var(--amber-l);color:#b07d10;border-color:#F5A62333}
+.btn-br:not(:disabled):hover{background:var(--amber);color:#fff}
+.btn-co{background:var(--red-l);color:var(--red);border-color:#C0392B33}
+.btn-co:not(:disabled):hover{background:var(--red);color:#fff}
+.btn-lv{background:var(--purple-l);color:var(--purple);border-color:rgba(205,50,129,.2)}
+.btn-lv:not(:disabled):hover{background:var(--purple);color:#fff}
+
+/* TIMER */
+.timer-wrap{background:linear-gradient(135deg,var(--blue),var(--blue-dark));border-radius:var(--rl);padding:1.25rem 1.5rem;color:#fff;display:flex;align-items:center;gap:1.25rem;margin-bottom:1rem}
+.t-dot{width:11px;height:11px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
+.t-dot.brk{background:var(--amber)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.35)}}
+.t-lbl{font-size:11px;opacity:.65;text-transform:uppercase;letter-spacing:.05em}
+.t-val{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.t-sub{font-size:11px;opacity:.65;margin-top:1px}
+.t-info{flex:1}
+.t-status{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.t-break-info{margin-top:6px;font-size:11px;opacity:.65}
+
+/* TODAY SUMMARY */
+.sum-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+.sum-box{border-radius:8px;padding:10px}
+.sum-box .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.sum-box .val{font-size:16px;font-weight:700;color:var(--text)}
+
+/* TEAM */
+.team-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(172px,1fr));gap:11px}
+.t-card{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--r);padding:.9rem}
+.t-card-av{width:32px;height:32px;border-radius:50%;background:var(--blue-light);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--blue);flex-shrink:0}
+.t-card-name{font-size:13px;font-weight:700;color:var(--text)}
+.t-card-times{font-size:11px;color:var(--text3);margin-top:8px}
+.t-card-times span{display:block;line-height:1.6}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:11px;margin-bottom:1rem}
+.stat{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--r);padding:.9rem}
+.stat .lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.stat .val{font-size:22px;font-weight:700;color:var(--text)}
+
+/* TABLE */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{background:var(--surface2);color:var(--text2);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;border-bottom:1px solid var(--bdr);text-align:left;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--bdr2);transition:background .1s}
+tbody tr:hover{background:var(--surface2)}
+tbody td{padding:9px 12px;color:var(--text);vertical-align:middle}
+
+/* FORM */
+.fg{margin-bottom:.9rem}
+.fl{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:4px}
+.fc{width:100%;padding:8px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+.fc:focus{border-color:var(--blue)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:var(--blue-dark)}
+.btn-s{background:var(--surface2);color:var(--text2)}.btn-s:hover{background:var(--bdr)}
+.btn-d{background:var(--red);color:#fff}.btn-d:hover{background:#a93226}
+.export-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;background:var(--green-l);color:#1a7a52;border:1px solid #2DC48D44;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
+.export-btn:hover{background:var(--green);color:#fff}
+.fsel{padding:6px 10px;border:1px solid var(--bdr);border-radius:6px;font-size:12px;color:var(--text2);background:var(--surface);outline:none;cursor:pointer}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.42);display:none;align-items:center;justify-content:center;z-index:1000}
+.mo.open{display:flex}
+.mo-box{background:var(--surface);border-radius:var(--rl);padding:1.5rem;width:360px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.mo-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:1.1rem}
+.mo-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:1.1rem}
+
+/* EMPTY / NO USER */
+.empty,.no-user{text-align:center;padding:2.5rem 1rem;color:var(--text3)}
+.empty svg,.no-user svg{opacity:.35;margin-bottom:.6rem}
+.empty p,.no-user p{font-size:13px}
+
+@media(max-width:680px){
+  .sb{width:52px}.sb-logo-title,.sb-logo-sub,.sb-sec,.nav-item span,.sb-foot{display:none}
+  .nav-item{justify-content:center;padding:.65rem}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-title">WFM Tracker</div>
+    <div class="sb-logo-sub">Workforce Mgmt</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Attendance</div>
+    <div class="nav-item active" onclick="showPage('attendance')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>My Attendance</span>
+    </div>
+    <div class="nav-item" onclick="showPage('team')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Team Status</span>
+    </div>
+    <div class="sb-sec">Reports</div>
+    <div class="nav-item" onclick="showPage('myrecords')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>My Records</span>
+    </div>
+    <div class="nav-item" onclick="showPage('allrecords')">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>All Records</span>
+    </div>
+  </nav>
+  <div class="sb-foot">
+    <div class="sb-foot-lbl">Active User</div>
+    <select class="sb-sel" id="userSel" onchange="switchUser()">
+      <option value="">— Select —</option>
+    </select>
+    <button class="sb-btn" onclick="openAddUser()">+ Add Me</button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="pgTitle">My Attendance</div>
+    <div class="topbar-date" id="tbDate"></div>
+    <div class="topbar-clock" id="tbClock">00:00:00</div>
+  </div>
+  <div class="content">
+
+    <!-- PAGE: MY ATTENDANCE -->
+    <div class="page active" id="page-attendance">
+      <div id="att-nouser" class="no-user" style="display:none">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <p>Select your name from the sidebar — or click <strong>+ Add Me</strong> to register.</p>
+      </div>
+      <div id="att-content">
+        <!-- Timer -->
+        <div id="timerWrap" class="timer-wrap" style="display:none">
+          <div class="t-dot" id="tDot"></div>
+          <div class="t-info">
+            <div class="t-lbl">Time Worked Today</div>
+            <div class="t-val" id="tVal">00:00:00</div>
+            <div class="t-sub" id="tSub">—</div>
+          </div>
+          <div>
+            <div class="t-status" id="tStatus">Working</div>
+            <div class="t-break-info" id="tBreakInfo"></div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Attendance Actions
+            <span id="dayBadge" class="badge b-gray" style="margin-left:auto">Not Started</span>
+          </div>
+          <div class="action-grid">
+            <button class="act-btn btn-ci" id="btnCI" onclick="doClockIn()">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+              Clock In
+            </button>
+            <button class="act-btn btn-br" id="btnBR" onclick="doBreak()" disabled>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+              <span id="btnBRLbl">Start Break</span>
+            </button>
+            <button class="act-btn btn-co" id="btnCO" onclick="askClockOut()" disabled>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Clock Out
+            </button>
+            <button class="act-btn btn-lv" id="btnLV" onclick="openLeave()">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Request Leave
+            </button>
+          </div>
+        </div>
+
+        <!-- Today summary -->
+        <div class="card">
+          <div class="card-title">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            Today's Summary
+          </div>
+          <div id="todaySummary"><p style="color:var(--text3);font-size:13px">No activity recorded yet today.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE: TEAM STATUS -->
+    <div class="page" id="page-team">
+      <div class="card">
+        <div class="card-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Team Status — Today
+          <button onclick="renderTeam()" style="margin-left:auto;background:var(--surface2);border:1px solid var(--bdr);padding:4px 10px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--text2)">↻ Refresh</button>
+        </div>
+        <div class="team-grid" id="teamGrid"></div>
+      </div>
+    </div>
+
+    <!-- PAGE: MY RECORDS -->
+    <div class="page" id="page-myrecords">
+      <div class="stats-row" id="myStats"></div>
+      <div class="card">
+        <div class="card-title">
+          My Attendance History
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="fsel" id="myMon" onchange="renderMyRec()"></select>
+            <button class="export-btn" onclick="exportMy()">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel
+            </button>
+          </div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Date</th><th>Day</th><th>Status</th><th>Clock In</th><th>Clock Out</th><th>Work</th><th>Breaks</th><th>Notes</th></tr></thead>
+          <tbody id="myTb"></tbody>
+        </table></div>
+        <div id="myEmpty" class="empty" style="display:none"><svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>No records for this period.</p></div>
+      </div>
+    </div>
+
+    <!-- PAGE: ALL RECORDS -->
+    <div class="page" id="page-allrecords">
+      <div class="stats-row" id="allStats"></div>
+      <div class="card">
+        <div class="card-title">
+          All Team Records
+          <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select class="fsel" id="allMon" onchange="renderAllRec()"></select>
+            <select class="fsel" id="allEmp" onchange="renderAllRec()"><option value="">All Employees</option></select>
+            <button class="export-btn" onclick="exportAll()">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Excel
+            </button>
+          </div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Date</th><th>Employee</th><th>Status</th><th>Clock In</th><th>Clock Out</th><th>Work</th><th>Breaks</th><th>Notes</th></tr></thead>
+          <tbody id="allTb"></tbody>
+        </table></div>
+        <div id="allEmpty" class="empty" style="display:none"><svg width="36" height="36" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><p>No records for this period.</p></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODAL: Add User -->
+<div class="mo" id="moUser">
+  <div class="mo-box">
+    <div class="mo-title">Add Your Name</div>
+    <div class="fg"><label class="fl">Full Name</label><input id="newName" class="fc" placeholder="Your full name..." /></div>
+    <div class="mo-foot">
+      <button class="btn btn-s" onclick="closeModal('moUser')">Cancel</button>
+      <button class="btn btn-p" onclick="addUser()">Add &amp; Select</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Leave -->
+<div class="mo" id="moLeave">
+  <div class="mo-box">
+    <div class="mo-title">Request Leave</div>
+    <div class="fg"><label class="fl">Date</label><input type="date" id="lvDate" class="fc"/></div>
+    <div class="fg"><label class="fl">Leave Type</label>
+      <select id="lvType" class="fc">
+        <option>Annual Leave</option><option>Sick Leave</option><option>Personal Leave</option>
+        <option>Work From Home</option><option>Unpaid Leave</option><option>Public Holiday</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Duration</label>
+      <select id="lvDur" class="fc">
+        <option>Full Day</option><option>Morning Half</option><option>Afternoon Half</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Notes (optional)</label><input id="lvNotes" class="fc" placeholder="Add notes..."/></div>
+    <div class="mo-foot">
+      <button class="btn btn-s" onclick="closeModal('moLeave')">Cancel</button>
+      <button class="btn btn-p" onclick="submitLeave()">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Clock Out -->
+<div class="mo" id="moCO">
+  <div class="mo-box">
+    <div class="mo-title">Confirm Clock Out</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:1rem">End your working session for today?</p>
+    <div class="fg"><label class="fl">End-of-day notes (optional)</label><input id="coNotes" class="fc" placeholder="Add notes..."/></div>
+    <div class="mo-foot">
+      <button class="btn btn-s" onclick="closeModal('moCO')">Cancel</button>
+      <button class="btn btn-d" onclick="confirmCO()">Clock Out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────
+const K = {e:'wfm_emp', s:'wfm_sess', u:'wfm_user'};
+const gd = k => { try{return JSON.parse(localStorage.getItem(k))||[]}catch{return[]} };
+const sd = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+const getEmps = () => gd(K.e);
+const getSess = () => gd(K.s);
+const getCU  = () => { try{return JSON.parse(localStorage.getItem(K.u))}catch{return null} };
+const setCU  = u => localStorage.setItem(K.u, JSON.stringify(u));
+const uid    = () => Date.now().toString(36)+Math.random().toString(36).slice(2);
+
+function saveSess(sess) {
+  const all = getSess();
+  const i = all.findIndex(s=>s.id===sess.id);
+  i>=0 ? all[i]=sess : all.push(sess);
+  sd(K.s, all);
+}
+
+function getSessFor(empId, date) {
+  return getSess().find(s=>s.employeeId===empId && s.date===date)||null;
+}
+
+function todayStr() {
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// ── TIME HELPERS ──────────────────────────────────────
+const ft = iso => iso ? new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—';
+const fd = ds  => { const d=new Date(ds+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); };
+
+function fDur(ms) {
+  if(!ms||ms<0) return '—';
+  const h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000);
+  return h>0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function fDurSec(s) {
+  const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), sc=s%60;
+  return [h,m,sc].map(n=>String(n).padStart(2,'0')).join(':');
+}
+
+function workMs(sess) {
+  if(!sess?.clockIn) return 0;
+  const end = sess.clockOut ? new Date(sess.clockOut) : new Date();
+  let t = end - new Date(sess.clockIn);
+  for(const b of sess.breaks||[]) {
+    const bs=new Date(b.start), be=b.end?new Date(b.end):new Date();
+    t -= (be-bs);
+  }
+  return Math.max(0,t);
+}
+
+function breakMs(sess) {
+  let t=0;
+  for(const b of sess?.breaks||[]) {
+    const bs=new Date(b.start), be=b.end?new Date(b.end):new Date();
+    t+=(be-bs);
+  }
+  return t;
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+const PAGE_TITLES = {attendance:'My Attendance',team:'Team Status',myrecords:'My Records',allrecords:'All Records'};
+const PAGE_NAV_IDX = {attendance:0,team:1,myrecords:2,allrecords:3};
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-item')[PAGE_NAV_IDX[p]]?.classList.add('active');
+  document.getElementById('pgTitle').textContent = PAGE_TITLES[p];
+  if(p==='team') renderTeam();
+  if(p==='myrecords') { populateMonthFilters(); renderMyRec(); }
+  if(p==='allrecords') { populateMonthFilters(); populateEmpFilter(); renderAllRec(); }
+}
+
+// ── CLOCK ─────────────────────────────────────────────
+function tickClock() {
+  const n=new Date();
+  document.getElementById('tbClock').textContent = n.toLocaleTimeString('en-GB');
+  document.getElementById('tbDate').textContent  = n.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+setInterval(tickClock,1000); tickClock();
+
+// ── TIMER ─────────────────────────────────────────────
+let timerIv = null;
+
+function startTimer() { if(timerIv) clearInterval(timerIv); timerIv=setInterval(tickTimer,1000); tickTimer(); }
+function stopTimer()  { if(timerIv){clearInterval(timerIv);timerIv=null;} }
+
+function tickTimer() {
+  const u=getCU(); if(!u) return;
+  const sess=getSessFor(u.id,todayStr());
+  if(!sess?.clockIn||sess.status==='clocked_out'||sess.status==='on_leave') return;
+  const wm = workMs(sess);
+  document.getElementById('tVal').textContent = fDurSec(Math.floor(wm/1000));
+  document.getElementById('tSub').textContent = `Clocked in at ${ft(sess.clockIn)}`;
+  const dot = document.getElementById('tDot');
+  const sts = document.getElementById('tStatus');
+  const bi  = document.getElementById('tBreakInfo');
+  if(sess.status==='on_break') {
+    dot.className='t-dot brk'; sts.textContent='On Break';
+    const lb=sess.breaks[sess.breaks.length-1];
+    bi.textContent = `Break: ${fDurSec(Math.floor((new Date()-new Date(lb.start))/1000))}`;
+  } else {
+    dot.className='t-dot'; sts.textContent='Working';
+    const bm=breakMs(sess);
+    bi.textContent = bm>0 ? `Total breaks: ${fDur(bm)}` : '';
+  }
+}
+
+// ── STATUS INFO ───────────────────────────────────────
+function statusInfo(sess) {
+  if(!sess||sess.status==='not_started') return {lbl:'Not Started',cls:'b-gray'};
+  return {
+    clocked_in: {lbl:'Working',       cls:'b-green'},
+    on_break:   {lbl:'On Break',      cls:'b-amber'},
+    clocked_out:{lbl:'Clocked Out',   cls:'b-blue'},
+    on_leave:   {lbl:sess.leaveType||'On Leave', cls:'b-purple'}
+  }[sess.status]||{lbl:sess.status,cls:'b-gray'};
+}
+
+// ── ATTENDANCE PAGE ───────────────────────────────────
+function renderAtt() {
+  const u=getCU();
+  document.getElementById('att-nouser').style.display  = u?'none':'block';
+  document.getElementById('att-content').style.display = u?'block':'none';
+  if(!u){stopTimer();return;}
+  const sess=getSessFor(u.id,todayStr());
+  updateBtns(sess);
+  renderSummary(sess);
+  const tw=document.getElementById('timerWrap');
+  if(sess?.clockIn && !['clocked_out','on_leave'].includes(sess.status)){
+    tw.style.display='flex'; startTimer();
+  } else {
+    tw.style.display='none'; stopTimer();
+  }
+}
+
+function updateBtns(sess) {
+  const st=sess?.status||'not_started';
+  const ci=document.getElementById('btnCI'),
+        br=document.getElementById('btnBR'),
+        co=document.getElementById('btnCO'),
+        lv=document.getElementById('btnLV');
+  ci.disabled = ['clocked_in','on_break','clocked_out','on_leave'].includes(st);
+  br.disabled = !['clocked_in','on_break'].includes(st);
+  co.disabled = !['clocked_in','on_break'].includes(st);
+  lv.disabled = ['clocked_in','on_break','on_leave'].includes(st);
+  document.getElementById('btnBRLbl').textContent = st==='on_break'?'End Break':'Start Break';
+  const {lbl,cls}=statusInfo(sess);
+  const b=document.getElementById('dayBadge');
+  b.className='badge '+cls; b.textContent=lbl;
+}
+
+function renderSummary(sess) {
+  const el=document.getElementById('todaySummary');
+  if(!sess){el.innerHTML='<p style="color:var(--text3);font-size:13px">No activity recorded yet today.</p>';return;}
+  if(sess.status==='on_leave'){
+    el.innerHTML=`<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+      <span class="badge b-purple" style="font-size:13px;padding:5px 12px">${sess.leaveType}</span>
+      <span style="font-size:13px;color:var(--text2)">${sess.leaveDuration||''}</span>
+      ${sess.notes?`<span style="font-size:13px;color:var(--text3)">${sess.notes}</span>`:''}
+    </div>`;return;
+  }
+  const wm=workMs(sess), bm=breakMs(sess), bc=(sess.breaks||[]).length;
+  el.innerHTML=`
+    <div class="sum-grid">
+      <div class="sum-box" style="background:var(--green-l)"><div class="lbl" style="color:#1a7a52">Clock In</div><div class="val">${ft(sess.clockIn)}</div></div>
+      <div class="sum-box" style="background:var(--red-l)"><div class="lbl" style="color:var(--red)">Clock Out</div><div class="val">${ft(sess.clockOut)}</div></div>
+      <div class="sum-box" style="background:var(--blue-light)"><div class="lbl" style="color:var(--blue)">Work Time</div><div class="val">${fDur(wm)||'—'}</div></div>
+      <div class="sum-box" style="background:var(--amber-l)"><div class="lbl" style="color:#b07d10">Break Time</div><div class="val">${bm>0?fDur(bm):'0m'}</div></div>
+    </div>
+    ${bc>0?`<div style="margin-top:10px;font-size:12px;color:var(--text2)">
+      <strong>Breaks:</strong> ${sess.breaks.map((b,i)=>`#${i+1}: ${ft(b.start)} – ${b.end?ft(b.end):'ongoing'}`).join(' &nbsp;·&nbsp; ')}
+    </div>`:''}
+  `;
+}
+
+// ── ACTIONS ───────────────────────────────────────────
+function doClockIn() {
+  const u=getCU(); if(!u) return;
+  if(getSessFor(u.id,todayStr())) return;
+  saveSess({id:uid(),employeeId:u.id,employeeName:u.name,date:todayStr(),
+    clockIn:new Date().toISOString(),clockOut:null,breaks:[],status:'clocked_in',
+    leaveType:null,leaveDuration:null,notes:''});
+  renderAtt();
+}
+
+function doBreak() {
+  const u=getCU(); if(!u) return;
+  const sess=getSessFor(u.id,todayStr()); if(!sess) return;
+  if(sess.status==='clocked_in'){
+    sess.breaks.push({start:new Date().toISOString(),end:null});
+    sess.status='on_break';
+  } else if(sess.status==='on_break'){
+    sess.breaks[sess.breaks.length-1].end=new Date().toISOString();
+    sess.status='clocked_in';
+  }
+  saveSess(sess); renderAtt();
+}
+
+function askClockOut() {
+  document.getElementById('coNotes').value='';
+  document.getElementById('moCO').classList.add('open');
+}
+
+function confirmCO() {
+  const u=getCU(); if(!u) return;
+  const sess=getSessFor(u.id,todayStr()); if(!sess) return;
+  if(sess.status==='on_break'){sess.breaks[sess.breaks.length-1].end=new Date().toISOString();}
+  sess.clockOut=new Date().toISOString(); sess.status='clocked_out';
+  sess.notes=document.getElementById('coNotes').value.trim();
+  saveSess(sess); closeModal('moCO'); renderAtt();
+}
+
+function openLeave() {
+  document.getElementById('lvDate').value=todayStr();
+  document.getElementById('lvNotes').value='';
+  document.getElementById('moLeave').classList.add('open');
+}
+
+function submitLeave() {
+  const u=getCU(); if(!u) return;
+  const date=document.getElementById('lvDate').value; if(!date) return;
+  if(getSessFor(u.id,date)){alert('A record already exists for this date.');return;}
+  saveSess({id:uid(),employeeId:u.id,employeeName:u.name,date,
+    clockIn:null,clockOut:null,breaks:[],status:'on_leave',
+    leaveType:document.getElementById('lvType').value,
+    leaveDuration:document.getElementById('lvDur').value,
+    notes:document.getElementById('lvNotes').value.trim()});
+  closeModal('moLeave');
+  if(date===todayStr()) renderAtt();
+}
+
+// ── USER MANAGEMENT ───────────────────────────────────
+function loadUserSel() {
+  const sel=document.getElementById('userSel'), cu=getCU();
+  sel.innerHTML='<option value="">— Select —</option>'+
+    getEmps().map(e=>`<option value="${e.id}"${cu?.id===e.id?' selected':''}>${e.name}</option>`).join('');
+}
+
+function switchUser() {
+  const id=document.getElementById('userSel').value;
+  if(!id){setCU(null);renderAtt();return;}
+  const e=getEmps().find(x=>x.id===id);
+  if(e){setCU(e);renderAtt();}
+}
+
+function openAddUser(){document.getElementById('newName').value='';document.getElementById('moUser').classList.add('open');}
+
+function addUser() {
+  const name=document.getElementById('newName').value.trim(); if(!name) return;
+  const emps=getEmps();
+  if(emps.find(e=>e.name.toLowerCase()===name.toLowerCase())){alert('Name already exists.');return;}
+  const e={id:uid(),name};
+  emps.push(e); sd(K.e,emps); setCU(e);
+  closeModal('moUser'); loadUserSel(); renderAtt();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mo').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.getElementById('newName').addEventListener('keydown',e=>{if(e.key==='Enter')addUser();});
+
+// ── TEAM PAGE ─────────────────────────────────────────
+function renderTeam() {
+  const emps=getEmps(), today=todayStr(), grid=document.getElementById('teamGrid');
+  if(!emps.length){grid.innerHTML='<p style="color:var(--text3);font-size:13px;grid-column:1/-1">No employees registered yet.</p>';return;}
+  grid.innerHTML=emps.map(emp=>{
+    const sess=getSessFor(emp.id,today), si=statusInfo(sess);
+    const wm=sess?.clockIn?workMs(sess):0;
+    return `<div class="t-card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div class="t-card-av">${emp.name.charAt(0).toUpperCase()}</div>
+        <div><div class="t-card-name">${emp.name}</div><span class="badge ${si.cls}" style="margin-top:2px">${si.lbl}</span></div>
+      </div>
+      <div class="t-card-times">
+        ${sess?.clockIn?`<span>In: ${ft(sess.clockIn)}</span>`:''}
+        ${sess?.clockOut?`<span>Out: ${ft(sess.clockOut)}</span>`:''}
+        ${sess?.clockIn?`<span style="color:var(--blue);font-weight:600">Work: ${fDur(wm)||'—'}</span>`:''}
+        ${sess?.status==='on_leave'&&sess.leaveDuration?`<span>${sess.leaveDuration}</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── REPORTS ───────────────────────────────────────────
+function getMonths() {
+  const m=new Set(getSess().map(s=>s.date.slice(0,7)));
+  m.add(todayStr().slice(0,7));
+  return [...m].sort().reverse();
+}
+
+function populateMonthFilters() {
+  const opts=getMonths().map(m=>{
+    const [y,mo]=m.split('-');
+    const lbl=new Date(+y,+mo-1,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+    return `<option value="${m}">${lbl}</option>`;
+  }).join('');
+  document.getElementById('myMon').innerHTML=opts;
+  document.getElementById('allMon').innerHTML=opts;
+}
+
+function populateEmpFilter() {
+  const sel=document.getElementById('allEmp');
+  sel.innerHTML='<option value="">All Employees</option>'+
+    getEmps().map(e=>`<option value="${e.id}">${e.name}</option>`).join('');
+}
+
+function renderMyRec() {
+  const u=getCU();
+  const mon=document.getElementById('myMon').value;
+  const tbody=document.getElementById('myTb'), empty=document.getElementById('myEmpty');
+  const stats=document.getElementById('myStats');
+  if(!u){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text3);padding:2rem">Select your name to view records.</td></tr>';empty.style.display='none';stats.innerHTML='';return;}
+  const rows=getSess().filter(s=>s.employeeId===u.id&&s.date.startsWith(mon)).sort((a,b)=>b.date.localeCompare(a.date));
+  const worked=rows.filter(s=>s.clockIn);
+  const leaves=rows.filter(s=>s.status==='on_leave');
+  const tw=worked.reduce((s,r)=>s+workMs(r),0);
+  stats.innerHTML=`
+    <div class="stat"><div class="lbl">Days Worked</div><div class="val">${worked.length}</div></div>
+    <div class="stat"><div class="lbl">Leave Days</div><div class="val">${leaves.length}</div></div>
+    <div class="stat"><div class="lbl">Total Work</div><div class="val">${fDur(tw)||'0m'}</div></div>
+    <div class="stat"><div class="lbl">Avg / Day</div><div class="val">${worked.length?fDur(tw/worked.length):'—'}</div></div>`;
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  const day=ds=>new Date(ds+'T00:00:00').toLocaleDateString('en-GB',{weekday:'short'});
+  tbody.innerHTML=rows.map(s=>{
+    const si=statusInfo(s), wm=workMs(s), bm=breakMs(s), bc=(s.breaks||[]).length;
+    return `<tr><td>${fd(s.date)}</td><td>${day(s.date)}</td><td><span class="badge ${si.cls}">${si.lbl}</span></td>
+      <td>${ft(s.clockIn)}</td><td>${ft(s.clockOut)}</td>
+      <td>${s.status!=='on_leave'&&wm>0?fDur(wm):'—'}</td>
+      <td>${bc>0?`${bc} (${fDur(bm)})`:'—'}</td>
+      <td style="color:var(--text2)">${s.notes||(s.leaveType?`${s.leaveType}${s.leaveDuration?' · '+s.leaveDuration:''}`:'—')}</td></tr>`;
+  }).join('');
+}
+
+function renderAllRec() {
+  const mon=document.getElementById('allMon').value, ef=document.getElementById('allEmp').value;
+  const tbody=document.getElementById('allTb'), empty=document.getElementById('allEmpty'), stats=document.getElementById('allStats');
+  let rows=getSess().filter(s=>s.date.startsWith(mon));
+  if(ef) rows=rows.filter(s=>s.employeeId===ef);
+  rows.sort((a,b)=>b.date.localeCompare(a.date)||a.employeeName.localeCompare(b.employeeName));
+  const tw=rows.filter(s=>s.clockIn).reduce((s,r)=>s+workMs(r),0);
+  const empCount=new Set(rows.map(s=>s.employeeId)).size;
+  stats.innerHTML=`
+    <div class="stat"><div class="lbl">Total Records</div><div class="val">${rows.length}</div></div>
+    <div class="stat"><div class="lbl">Employees</div><div class="val">${empCount}</div></div>
+    <div class="stat"><div class="lbl">Leave Records</div><div class="val">${rows.filter(s=>s.status==='on_leave').length}</div></div>
+    <div class="stat"><div class="lbl">Total Work</div><div class="val">${fDur(tw)||'0m'}</div></div>`;
+  if(!rows.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=rows.map(s=>{
+    const si=statusInfo(s), wm=workMs(s), bm=breakMs(s), bc=(s.breaks||[]).length;
+    return `<tr><td>${fd(s.date)}</td><td><strong>${s.employeeName}</strong></td><td><span class="badge ${si.cls}">${si.lbl}</span></td>
+      <td>${ft(s.clockIn)}</td><td>${ft(s.clockOut)}</td>
+      <td>${s.status!=='on_leave'&&wm>0?fDur(wm):'—'}</td>
+      <td>${bc>0?`${bc} (${fDur(bm)})`:'—'}</td>
+      <td style="color:var(--text2)">${s.notes||(s.leaveType?`${s.leaveType}${s.leaveDuration?' · '+s.leaveDuration:''}`:'—')}</td></tr>`;
+  }).join('');
+}
+
+// ── EXPORT ────────────────────────────────────────────
+function toRows(sessions) {
+  return sessions.map(s=>({
+    'Date':fd(s.date),'Employee':s.employeeName,
+    'Status':s.status==='on_leave'?(s.leaveType||'Leave'):s.status.replace(/_/g,' '),
+    'Clock In':ft(s.clockIn),'Clock Out':ft(s.clockOut),
+    'Work Duration':s.status!=='on_leave'&&workMs(s)>0?fDur(workMs(s)):'',
+    'Break Count':(s.breaks||[]).length||'','Break Duration':breakMs(s)>0?fDur(breakMs(s)):'',
+    'Leave Type':s.leaveType||'','Leave Duration':s.leaveDuration||'','Notes':s.notes||''
+  }));
+}
+
+function exportMy() {
+  const u=getCU(); if(!u) return;
+  const mon=document.getElementById('myMon').value;
+  const rows=toRows(getSess().filter(s=>s.employeeId===u.id&&s.date.startsWith(mon)).sort((a,b)=>a.date.localeCompare(b.date)));
+  const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Attendance');
+  XLSX.writeFile(wb,`Attendance_${u.name.replace(/ /g,'_')}_${mon}.xlsx`);
+}
+
+function exportAll() {
+  const mon=document.getElementById('allMon').value, ef=document.getElementById('allEmp').value;
+  let rows=getSess().filter(s=>s.date.startsWith(mon));
+  if(ef) rows=rows.filter(s=>s.employeeId===ef);
+  rows.sort((a,b)=>a.date.localeCompare(b.date)||a.employeeName.localeCompare(b.employeeName));
+  const ws=XLSX.utils.json_to_sheet(toRows(rows)), wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'All Attendance');
+  XLSX.writeFile(wb,`Team_Attendance_${mon}.xlsx`);
+}
+
+// ── INIT ──────────────────────────────────────────────
+loadUserSel();
+populateMonthFilters();
+populateEmpFilter();
+renderAtt();
+</script>
+</body>
+</html>
