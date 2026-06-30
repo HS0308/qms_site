@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>CoR3 QMS</title>
 <style>
@@ -660,6 +661,10 @@ th:hover .sort-arrow{opacity:1}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Export as Excel
               </div>
+              <div class="dots-item" onclick="exportPanel('chart','docx');closeDots()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export as Word
+              </div>
               <div class="dots-divider"></div>
               <div class="dots-item" onclick="drillDown('chart');closeDots()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -691,6 +696,10 @@ th:hover .sort-arrow{opacity:1}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Export as Excel
               </div>
+              <div class="dots-item" onclick="exportPanel('targets','docx');closeDots()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export as Word
+              </div>
             </div>
           </div>
         </div>
@@ -715,6 +724,10 @@ th:hover .sort-arrow{opacity:1}
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Export as Excel
               </div>
+              <div class="dots-item" onclick="exportPanel('supervisors','docx');closeDots()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export as Word
+              </div>
               <div class="dots-divider"></div>
               <div class="dots-item" onclick="drillDown('supervisors');closeDots()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -724,7 +737,7 @@ th:hover .sort-arrow{opacity:1}
           </div>
         </div>
       </div>
-      <table>
+      <table id="sup-overview-table">
         <thead>
           <tr class="tbl-hdr-row">
             <th style="width:17%;cursor:pointer;user-select:none" onclick="sortSup('name')">Supervisor <span id="sa-name" style="font-size:9px;opacity:.7"></span></th>
@@ -2122,6 +2135,7 @@ th:hover .sort-arrow{opacity:1}
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;color:var(--text3)" id="queue-count-label">— interactions</span>
           <button onclick="exportQueue()" style="padding:5px 12px;background:transparent;border:1px solid var(--bdr);border-radius:6px;color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Export</button>
+          <button onclick="exportQueue('docx')" style="padding:5px 12px;background:transparent;border:1px solid var(--blue);border-radius:6px;color:var(--blue);font-size:11px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Word</button>
         </div>
       </div>
       <div style="overflow-x:auto">
@@ -2349,6 +2363,7 @@ th:hover .sort-arrow{opacity:1}
         </div>
         <button class="fr" onclick="resetRptFilters()">Reset</button>
         <button style="padding:7px 14px;background:var(--green-l);border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif;margin-left:auto" onclick="exportReport('wow')">⬇ Export</button>
+        <button style="padding:7px 14px;background:var(--blue-light);border:1px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif" onclick="exportReport('wow','docx')">⬇ Word</button>
       </div>
 
       <div class="twrap rpt-section">
@@ -2378,10 +2393,11 @@ th:hover .sort-arrow{opacity:1}
           </select>
         </div>
         <button style="padding:7px 14px;background:var(--green-l);border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif;margin-left:auto" onclick="exportReport('questions')">⬇ Export</button>
+        <button style="padding:7px 14px;background:var(--blue-light);border:1px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif" onclick="exportReport('questions','docx')">⬇ Word</button>
       </div>
       <div class="twrap rpt-section">
         <div class="thead2"><div class="thead2-title">Table 2 — Error rate by question WoW</div><span style="font-size:11px;color:var(--text3)">Δ = change vs previous week · shows worsening trends</span></div>
-        <table style="font-size:12px"><thead><tr class="tbl-hdr-row" id="rpt-q-head"></tr></thead><tbody id="rpt-q-tbody"></tbody></table>
+        <table style="font-size:12px" id="rpt-q-table"><thead><tr class="tbl-hdr-row" id="rpt-q-head"></tr></thead><tbody id="rpt-q-tbody"></tbody></table>
       </div>
     </div>
 
@@ -2404,13 +2420,14 @@ th:hover .sort-arrow{opacity:1}
           </select>
         </div>
         <button style="padding:7px 14px;background:var(--green-l);border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif;margin-left:auto" onclick="exportReport('lowperf')">⬇ Export</button>
+        <button style="padding:7px 14px;background:var(--blue-light);border:1px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif" onclick="exportReport('lowperf','docx')">⬇ Word</button>
       </div>
       <div class="twrap rpt-section">
         <div class="thead2">
           <div><div class="thead2-title">Table 3 — Low performers</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Agents scoring &lt;80% for 3+ consecutive weeks · Assistance Program eligibility</div></div>
           <span id="rpt-lp-count" style="font-size:12px;font-weight:700;color:var(--red)">— agents</span>
         </div>
-        <table style="font-size:12px">
+        <table style="font-size:12px" id="rpt-lp-table">
           <thead><tr class="tbl-hdr-row">
             <th style="width:15%">Agent</th>
             <th style="width:13%">Supervisor</th>
@@ -2501,6 +2518,7 @@ th:hover .sort-arrow{opacity:1}
         <div style="margin-left:auto;display:flex;gap:8px">
           <button onclick="exportRaw('csv')" style="padding:7px 16px;background:transparent;border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Download CSV</button>
           <button onclick="exportRaw('xlsx')" style="padding:7px 16px;background:var(--green);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Download Excel</button>
+          <button onclick="exportRaw('docx')" style="padding:7px 16px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Download Word</button>
         </div>
       </div>
 
@@ -2979,6 +2997,7 @@ th:hover .sort-arrow{opacity:1}
       <button class="fr" onclick="resetALFilters()">Reset</button>
       <button class="fa" onclick="applyALFilters()">Apply</button>
       <button onclick="exportActivityLog()" style="padding:7px 14px;background:var(--green-l);border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Export</button>
+      <button onclick="exportActivityLog('docx')" style="padding:7px 14px;background:var(--blue-light);border:1px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Word</button>
     </div>
 
     <!-- RESULTS COUNT + VIEW TOGGLE -->
@@ -3040,6 +3059,7 @@ th:hover .sort-arrow{opacity:1}
         <div style="display:flex;gap:8px">
           <button onclick="exportDrillDown('csv')" style="padding:7px 14px;background:transparent;border:1px solid var(--green);border-radius:var(--r);color:var(--green);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ CSV</button>
           <button onclick="exportDrillDown('xlsx')" style="padding:7px 14px;background:var(--green);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Excel</button>
+          <button onclick="exportDrillDown('docx')" style="padding:7px 14px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Word</button>
           <button class="btn-c" onclick="closeModal('drilldown-modal')">Close</button>
         </div>
       </div>
@@ -3148,6 +3168,57 @@ th:hover .sort-arrow{opacity:1}
 <div class="toast" id="toast-el"></div>
 
 <script>
+// ── DOCX EXPORT ───────────────────────────────────────────────────────────────
+function triggerBlobDownload(blob, filename){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function downloadDocxTable(title, headers, rows, filename){
+  if(typeof docx==='undefined'){ toast2('DOCX library failed to load','r'); return; }
+  const { Document, Packer, Paragraph, Table, TableRow, TableCell, TextRun, HeadingLevel, WidthType } = docx;
+  const headerRow = new TableRow({
+    tableHeader:true,
+    children: headers.map(h=>new TableCell({
+      shading:{fill:'001B6C'},
+      children:[new Paragraph({children:[new TextRun({text:String(h),bold:true,color:'FFFFFF'})]})]
+    }))
+  });
+  const dataRows = rows.map(r=>new TableRow({
+    children: r.map(v=>new TableCell({children:[new Paragraph(String(v??'—'))]}))
+  }));
+  const doc = new Document({
+    sections:[{
+      children:[
+        new Paragraph({text:title, heading:HeadingLevel.HEADING_1}),
+        new Paragraph({text:'Generated '+new Date().toLocaleString(), spacing:{after:200}}),
+        new Table({rows:[headerRow,...dataRows], width:{size:100,type:WidthType.PERCENTAGE}})
+      ]
+    }]
+  });
+  const blob = await Packer.toBlob(doc);
+  triggerBlobDownload(blob, filename.endsWith('.docx')?filename:filename+'.docx');
+  toast2(filename+'.docx downloaded','g');
+}
+
+function domTableToData(tableEl){
+  if(!tableEl) return {headers:[],rows:[]};
+  const trs=[...tableEl.querySelectorAll('tr')].filter(tr=>tr.children.length);
+  if(!trs.length) return {headers:[],rows:[]};
+  const headers=[...trs[0].children].map(c=>c.textContent.trim());
+  const rows=trs.slice(1).map(tr=>[...tr.children].map(c=>c.textContent.trim()));
+  return {headers,rows};
+}
+
+async function downloadDocxFromTable(title, tableEl, filename){
+  const {headers,rows}=domTableToData(tableEl);
+  if(!rows.length){ toast2('Nothing to export','r'); return; }
+  await downloadDocxTable(title, headers, rows, filename);
+}
+
 // ── DATA ─────────────────────────────────────────────────────────────────────
 const TABS=['Overview','Queue','Scoresheets','Reports','CTL','Disputes','Calibration','Auditor'];
 
@@ -3344,6 +3415,12 @@ function renderDDTable(){
 }
 
 function exportDrillDown(fmt){
+  if(fmt==='docx'){
+    const headers=DD_COLS.map(c=>c.label);
+    const rows=ddRows.map(r=>DD_COLS.map(c=>r[c.key]??'—'));
+    downloadDocxTable('Drill-down records', headers, rows, 'drilldown-export');
+    return;
+  }
   toast2('Exporting '+ddRows.length+' records as '+fmt.toUpperCase(),'g');
 }
 
@@ -6071,7 +6148,13 @@ function renderALTimeline(){
     }).join('')}`).join('');
 }
 
-function exportActivityLog(){
+function exportActivityLog(fmt){
+  if(fmt==='docx'){
+    const headers=['Type','User','Role','Timestamp','Description','Record'];
+    const rows=filteredAL.map(r=>[r.type,r.user,r.role,r.timestamp,r.desc,r.record]);
+    downloadDocxTable('Activity log', headers, rows, 'activity-log-export');
+    return;
+  }
   toast2('Activity log exported ('+filteredAL.length+' records)','g');
 }
 
@@ -6337,11 +6420,24 @@ function exportRaw(fmt){
     const diff=Math.round((new Date(to)-new Date(from))/(1000*60*60*24));
     if(diff>31){toast2('Maximum 31 days per download. Please adjust your date range.','r');return;}
   }
+  if(fmt==='docx'){
+    const cols=RAW_COLS.filter(c=>c.on);
+    const headers=cols.map(c=>c.label);
+    const rows=filteredRaw.map(r=>cols.map(c=>r[c.key]??'—'));
+    downloadDocxTable('Raw audit data', headers, rows, 'raw-data-export');
+    return;
+  }
   toast2('Downloading '+filteredRaw.length+' records as '+fmt.toUpperCase()+'...','g');
 }
 
-function exportReport(type){
+function exportReport(type,fmt){
   const labels={wow:'WoW Performance',questions:'Question Error Rates',lowperf:'Low Performers'};
+  if(fmt==='docx'){
+    const tableIds={wow:'rpt-wow-table',questions:'rpt-q-table',lowperf:'rpt-lp-table'};
+    const tbl=document.getElementById(tableIds[type]);
+    downloadDocxFromTable(labels[type]||'Report', tbl, (type||'report')+'-export');
+    return;
+  }
   toast2((labels[type]||'Report')+' exported as Excel','g');
 }
 
@@ -6551,7 +6647,13 @@ function assignAuditor(idx,auditor){
   buildQueueTabs(); // update pending counts in tabs
 }
 
-function exportQueue(){
+function exportQueue(fmt){
+  if(fmt==='docx'){
+    const headers=['ID','Date/Time','Modality','Agent','Supervisor','Contact','Auditor','Status','Score'];
+    const rows=filteredQueue.map(q=>[q.id,q.datetime,q.mod,q.agent,q.sup,q.contact,q.auditor||'—',q.status,q.score??'—']);
+    downloadDocxTable('Audit queue', headers, rows, 'queue-export');
+    return;
+  }
   toast2('Queue exported ('+filteredQueue.length+' rows)','b');
 }
 
@@ -8023,12 +8125,18 @@ function renderCalibResults(){
 
   tableHTML += `<div style="margin-top:10px;display:flex;justify-content:flex-end">
     <button onclick="exportCalibData()" style="padding:7px 16px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif">⬇ Export all ${SESSION_TICKETS.length} tickets data</button>
+    <button onclick="exportCalibData('docx')" style="padding:7px 16px;background:transparent;border:1px solid var(--blue);border-radius:var(--r);color:var(--blue);font-size:12px;font-weight:700;cursor:pointer;font-family:Calibri,sans-serif;margin-left:8px">⬇ Export as Word</button>
   </div>`;
 
   document.getElementById('calib-vs-table').innerHTML = tableHTML;
 }
 
-function exportCalibData(){
+function exportCalibData(fmt){
+  if(fmt==='docx'){
+    const tbl=document.querySelector('#calib-vs-table table');
+    downloadDocxFromTable('Calibration data', tbl, 'calibration-export');
+    return;
+  }
   toast2('Exporting all 5 tickets calibration data...','b');
 }
 
@@ -8615,6 +8723,19 @@ document.addEventListener('click',function(e){
 
 function exportPanel(panel,fmt){
   const labels={chart:'WoW Quality Score',targets:'Performance Targets',supervisors:'Supervisors Overview'};
+  if(fmt==='docx'){
+    if(panel==='chart'){
+      const data=fwks.length?fwks:ALL_WEEKS;
+      downloadDocxTable(labels.chart, ['Week','Score'], data.map(w=>[w.label,w.score.toFixed(1)+'%']), 'wow-quality-score-export');
+    } else if(panel==='targets'){
+      downloadDocxTable(labels.targets, ['Metric','Value','Target','Status'],
+        TGTS.map(t=>[t.l, t.v+t.u, (t.lb?'< ':'≥ ')+t.t+t.u, (t.lb?t.v<=t.t:t.v>=t.t)?'On target':'Below']), 'performance-targets-export');
+    } else if(panel==='supervisors'){
+      const tbl=document.getElementById('sup-overview-table');
+      downloadDocxFromTable(labels.supervisors, tbl, 'supervisors-export');
+    }
+    return;
+  }
   toast2((labels[panel]||panel)+' exported as '+fmt.toUpperCase(),'g');
 }
 function drillDown(panel){
