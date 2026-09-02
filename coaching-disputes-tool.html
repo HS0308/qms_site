@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Quality Coaching &amp; Disputes Tool</title>
+<style>
+:root{
+  --bg:#f4f6f9;--surface:#ffffff;--surface2:#f7f9fc;--bdr:#e3e8ef;--text:#1c2536;--text2:#4b5468;--text3:#8891a3;
+  --blue:#2563eb;--blue-l:#eaf1fe;--green:#16a34a;--green-l:#eafaf0;--red:#dc2626;--red-l:#fdecec;
+  --amber:#d97706;--amber-l:#fef6e6;--purple:#7c3aed;--purple-l:#f2ecfd;--r:8px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Calibri,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--surface);border-bottom:1px solid var(--bdr);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+header h1{font-size:17px;margin:0;font-weight:800}
+header .sub{font-size:11px;color:var(--text3);margin-top:2px}
+.badge{background:var(--green-l);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-left:8px;letter-spacing:.03em;text-transform:uppercase}
+.hdr-actions{display:flex;gap:8px}
+button{font-family:inherit;cursor:pointer}
+.btn{border:1px solid var(--bdr);background:var(--surface);color:var(--text2);border-radius:var(--r);padding:8px 13px;font-size:12.5px;font-weight:600}
+.btn:hover{background:var(--surface2)}
+.btn-p{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn-p:hover{background:#1d4fd8}
+.btn-d{background:var(--red);border-color:var(--red);color:#fff}
+.tabs{display:flex;gap:4px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--bdr)}
+.tab{padding:12px 16px;font-size:13px;font-weight:700;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer}
+.tab.on{color:var(--blue);border-color:var(--blue)}
+main{padding:20px 22px;max-width:1200px;margin:0 auto}
+.panel{display:none}
+.panel.on{display:block}
+.card{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:800}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+textarea{resize:vertical;min-height:80px}
+.field{margin-bottom:12px}
+.chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.chk{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;font-size:12.5px}
+.chk input{width:auto}
+.info{background:var(--blue-l);color:var(--blue);border-radius:6px;padding:9px 12px;font-size:12px;margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px}
+.kpi .l{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em}
+.kpi .v{font-size:22px;font-weight:800;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;background:var(--surface2);color:var(--text3);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;padding:9px 10px;border-bottom:1px solid var(--bdr)}
+td{padding:9px 10px;border-bottom:1px solid var(--bdr)}
+tr:last-child td{border-bottom:none}
+.pill{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;display:inline-block}
+.p-done{background:var(--green-l);color:var(--green)}
+.p-pending{background:var(--amber-l);color:var(--amber)}
+.p-open{background:var(--purple-l);color:var(--purple)}
+.p-valid{background:var(--green-l);color:var(--green)}
+.p-invalid{background:var(--red-l);color:var(--red)}
+.p-rejected{background:var(--red-l);color:var(--red)}
+.row-actions{display:flex;gap:6px}
+.row-actions button{padding:5px 9px;font-size:11.5px}
+.toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar input[type=text]{width:220px}
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,20,30,.5);align-items:center;justify-content:center;z-index:100}
+.overlay.on{display:flex}
+.modal{background:var(--surface);border-radius:10px;width:560px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.mh{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--bdr)}
+.mh-title{font-size:15px;font-weight:800}
+.mh-sub{font-size:11.5px;color:var(--text3);margin-top:3px}
+.mcl{background:none;border:none;font-size:18px;color:var(--text3)}
+.mc{padding:16px 18px}
+.mf{padding:14px 18px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:8px}
+.empty{text-align:center;color:var(--text3);font-size:12.5px;padding:26px 0}
+footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
+.storage-note{font-size:11px;color:var(--text3);background:var(--surface2);border:1px dashed var(--bdr);border-radius:6px;padding:8px 10px;margin-bottom:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Quality Coaching &amp; Disputes Tool <span class="badge">No cloud · Local only</span></h1>
+    <div class="sub">Runs entirely in this browser tab — no server, no account, no data leaves this device unless you export it.</div>
+  </div>
+  <div class="hdr-actions">
+    <button class="btn" onclick="exportData()">⬇ Export team file (.json)</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">⬆ Import team file</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none" onchange="importData(event)"/>
+    <button class="btn" onclick="if(confirm('Clear ALL local data on this device? This cannot be undone.'))clearAll()">Clear data</button>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab on" data-tab="coaching" onclick="showTab('coaching')">Coaching (CTL)</div>
+  <div class="tab" data-tab="disputes" onclick="showTab('disputes')">Disputes</div>
+  <div class="tab" data-tab="help" onclick="showTab('help')">How this works</div>
+</div>
+
+<main>
+
+  <!-- ============ COACHING (CTL) PANEL ============ -->
+  <div class="panel on" id="panel-coaching">
+    <div class="storage-note">Data is saved to <b>this browser's local storage</b> as you type/submit. Use <b>Export</b> to hand a snapshot to a teammate or save a backup — nothing is uploaded automatically.</div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="l">Total coaching sessions</div><div class="v" id="k-ctl-total">0</div></div>
+      <div class="kpi"><div class="l">Pending CTL</div><div class="v" id="k-ctl-pending" style="color:var(--amber)">0</div></div>
+      <div class="kpi"><div class="l">Done this week</div><div class="v" id="k-ctl-week" style="color:var(--green)">0</div></div>
+      <div class="kpi"><div class="l">Agents coached</div><div class="v" id="k-ctl-agents" style="color:var(--blue)">0</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Close the Loop — new coaching session</h2>
+      <div class="grid3">
+        <div class="field"><label>Agent name</label><input type="text" id="c-agent" placeholder="e.g. Sara Mitchell"/></div>
+        <div class="field"><label>Audit / interaction ID</label><input type="text" id="c-audit" placeholder="e.g. AUD-1042"/></div>
+        <div class="field"><label>Audit score (%)</label><input type="number" id="c-score" min="0" max="100" placeholder="e.g. 78"/></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>Coach / supervisor name</label><input type="text" id="c-coach" placeholder="Your name"/></div>
+        <div class="field"><label>Coaching date</label><input type="date" id="c-date"/></div>
+      </div>
+      <div class="field">
+        <label>Coached actions (select all that apply)</label>
+        <div class="chk-grid" id="c-actions-grid"></div>
+      </div>
+      <div class="field">
+        <label>Session notes</label>
+        <textarea id="c-notes" placeholder="Describe the coaching session, key points discussed, and agent acknowledgment..."></textarea>
+      </div>
+      <div class="info">ℹ Submitting will log this session as <b>CTL Done</b> in the table below. Keep a copy via Export for your records.</div>
+      <div style="margin-top:12px;text-align:right"><button class="btn-p" onclick="submitCTL()">Submit CTL</button></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Coaching log</h2>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="ctl-search" placeholder="Search agent or coach..." oninput="renderCTLTable()"/>
+          <select id="ctl-status-filter" onchange="renderCTLTable()">
+            <option value="">All statuses</option>
+            <option value="Done">Done</option>
+            <option value="Pending">Pending</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Audit ID</th><th>Agent</th><th>Score</th><th>Coach</th><th>Date</th><th>Actions taken</th><th>Status</th><th></th>
+        </tr></thead>
+        <tbody id="ctl-tbody"></tbody>
+      </table>
+      </div>
+      <div id="ctl-empty" class="empty" style="display:none">No coaching sessions logged yet.</div>
+    </div>
+  </div>
+
+  <!-- ============ DISPUTES PANEL ============ -->
+  <div class="panel" id="panel-disputes">
+    <div class="storage-note">Same rule applies here: everything is stored locally in this tab. Export the file after each shift and share it (email, chat, shared drive) so supervisors/QA on other machines can Import and stay in sync — no live server required.</div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="l">Total disputes</div><div class="v" id="k-d-total">0</div></div>
+      <div class="kpi"><div class="l">Pending review</div><div class="v" id="k-d-pending" style="color:var(--amber)">0</div></div>
+      <div class="kpi"><div class="l">Valid</div><div class="v" id="k-d-valid" style="color:var(--green)">0</div></div>
+      <div class="kpi"><div class="l">Invalid / rejected</div><div class="v" id="k-d-invalid" style="color:var(--red)">0</div></div>
+    </div>
+
+    <div class="card">
+      <h2>Request a score dispute</h2>
+      <div class="grid3">
+        <div class="field"><label>Agent name</label><input type="text" id="d-agent" placeholder="e.g. Ahmed Hassan"/></div>
+        <div class="field"><label>Audit / interaction ID</label><input type="text" id="d-audit" placeholder="e.g. AUD-1042"/></div>
+        <div class="field"><label>Original score (%)</label><input type="number" id="d-score" min="0" max="100" placeholder="e.g. 82"/></div>
+      </div>
+      <div class="field"><label>Disputed question(s) / criteria</label><input type="text" id="d-questions" placeholder="e.g. Q3 - Greeting, Q7 - Compliance script"/></div>
+      <div class="field"><label>Reason for dispute</label><textarea id="d-reason" placeholder="Explain why you believe the score/finding is incorrect, with supporting evidence..."></textarea></div>
+      <div style="margin-top:4px;text-align:right"><button class="btn-p" onclick="submitDispute()">Submit dispute</button></div>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2 style="margin:0">Dispute log</h2>
+        <div style="display:flex;gap:8px">
+          <input type="text" id="d-search" placeholder="Search agent..." oninput="renderDisputesTable()"/>
+          <select id="d-status-filter" onchange="renderDisputesTable()">
+            <option value="">All statuses</option>
+            <option value="Pending">Pending</option>
+            <option value="Valid">Valid</option>
+            <option value="Invalid">Invalid</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr>
+          <th>Audit ID</th><th>Agent</th><th>Score</th><th>Disputed items</th><th>Submitted</th><th>Status</th><th>Resolution notes</th><th></th>
+        </tr></thead>
+        <tbody id="d-tbody"></tbody>
+      </table>
+      </div>
+      <div id="d-empty" class="empty" style="display:none">No disputes logged yet.</div>
+    </div>
+  </div>
+
+  <!-- ============ HELP PANEL ============ -->
+  <div class="panel" id="panel-help">
+    <div class="card">
+      <h2>What this tool is</h2>
+      <p style="font-size:13px;color:var(--text2);line-height:1.6">
+        A single self-contained HTML file for two QMS workflows — <b>Close the Loop (CTL) coaching</b> and
+        <b>audit score disputes</b> — that any teammate can open directly in a browser with no install, no login,
+        and no shared database. Everyone's records live only in their own browser (<code>localStorage</code>).
+      </p>
+      <h2 style="margin-top:16px">Sharing across the team without a cloud backend</h2>
+      <ul style="font-size:13px;color:var(--text2);line-height:1.8">
+        <li>Copy this <code>coaching-disputes-tool.html</code> file to any shared drive, USB, chat, or intranet link — each person opens it locally.</li>
+        <li>Use <b>Export team file (.json)</b> to save a snapshot of your entries, then send that file to a supervisor/QA lead.</li>
+        <li>They use <b>Import team file</b> to merge those records into their own copy of the tool.</li>
+        <li>No server, no signup, no recurring cost, and no company data stored on any third-party cloud.</li>
+      </ul>
+      <h2 style="margin-top:16px">Data location</h2>
+      <p style="font-size:13px;color:var(--text2)">All data is stored under the browser's local storage key <code>qms_local_v1</code>. Clearing browser data, using a different browser, or opening the file in private/incognito mode will not show previously saved records unless you re-import an exported file.</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>Quality Coaching &amp; Disputes Tool · runs 100% client-side</footer>
+
+<!-- Edit status modal (disputes) -->
+<div class="overlay" id="resolve-modal">
+  <div class="modal">
+    <div class="mh">
+      <div><div class="mh-title">Resolve dispute</div><div class="mh-sub" id="rm-sub"></div></div>
+      <button class="mcl" onclick="closeOverlay('resolve-modal')">&#215;</button>
+    </div>
+    <div class="mc">
+      <div class="field"><label>Status</label>
+        <select id="rm-status">
+          <option value="Pending">Pending</option>
+          <option value="Valid">Valid</option>
+          <option value="Invalid">Invalid</option>
+          <option value="Rejected">Rejected</option>
+        </select>
+      </div>
+      <div class="field"><label>Resolution notes</label><textarea id="rm-notes" placeholder="Outcome, corrected score, rationale..."></textarea></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeOverlay('resolve-modal')">Cancel</button><button class="btn-p" onclick="saveResolution()">Save</button></div>
+  </div>
+</div>
+
+<script>
+const STORE_KEY='qms_local_v1';
+const COACHED_ACTIONS=['Reviewed audit findings','Discussed compliance gap','Role-play/practice','Set improvement goal','Shared training material','Escalated to team lead'];
+
+function loadData(){
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return {ctl:[],disputes:[]};
+}
+let DATA=loadData();
+function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+
+function uid(prefix){ return prefix+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+// ---------- Tabs ----------
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('panel-'+name).classList.add('on');
+}
+
+// ---------- CTL ----------
+function buildActionsGrid(){
+  const grid=document.getElementById('c-actions-grid');
+  grid.innerHTML=COACHED_ACTIONS.map((a,i)=>`<label class="chk"><input type="checkbox" value="${a}"/> ${a}</label>`).join('');
+}
+function submitCTL(){
+  const agent=document.getElementById('c-agent').value.trim();
+  const audit=document.getElementById('c-audit').value.trim();
+  const score=document.getElementById('c-score').value;
+  const coach=document.getElementById('c-coach').value.trim();
+  const date=document.getElementById('c-date').value || todayISO();
+  const notes=document.getElementById('c-notes').value.trim();
+  const actions=[...document.querySelectorAll('#c-actions-grid input:checked')].map(i=>i.value);
+
+  if(!agent||!audit){ alert('Agent name and Audit ID are required.'); return; }
+
+  DATA.ctl.unshift({
+    id:uid('ctl'), agent, audit, score: score===''? null : Number(score),
+    coach, date, notes, actions, status:'Done', createdAt:new Date().toISOString()
+  });
+  saveData();
+  document.getElementById('c-agent').value='';
+  document.getElementById('c-audit').value='';
+  document.getElementById('c-score').value='';
+  document.getElementById('c-coach').value='';
+  document.getElementById('c-date').value='';
+  document.getElementById('c-notes').value='';
+  buildActionsGrid();
+  renderCTLTable();
+}
+function deleteCTL(id){
+  if(!confirm('Delete this coaching record?')) return;
+  DATA.ctl=DATA.ctl.filter(r=>r.id!==id); saveData(); renderCTLTable();
+}
+function renderCTLTable(){
+  const q=(document.getElementById('ctl-search').value||'').toLowerCase();
+  const st=document.getElementById('ctl-status-filter').value;
+  let rows=DATA.ctl.filter(r=>{
+    const matchQ=!q || r.agent.toLowerCase().includes(q) || (r.coach||'').toLowerCase().includes(q);
+    const matchSt=!st || r.status===st;
+    return matchQ&&matchSt;
+  });
+  const tbody=document.getElementById('ctl-tbody');
+  tbody.innerHTML=rows.map(r=>`
+    <tr>
+      <td>${esc(r.audit)}</td>
+      <td>${esc(r.agent)}</td>
+      <td>${r.score!=null? r.score+'%':'—'}</td>
+      <td>${esc(r.coach||'—')}</td>
+      <td>${esc(r.date||'—')}</td>
+      <td style="max-width:220px">${r.actions&&r.actions.length? esc(r.actions.join(', ')):'—'}</td>
+      <td><span class="pill p-done">${esc(r.status)}</span></td>
+      <td class="row-actions"><button class="btn" onclick="deleteCTL('${r.id}')">Delete</button></td>
+    </tr>`).join('');
+  document.getElementById('ctl-empty').style.display = rows.length? 'none':'block';
+  updateCTLKpis();
+}
+function updateCTLKpis(){
+  const total=DATA.ctl.length;
+  const pending=DATA.ctl.filter(r=>r.status==='Pending').length;
+  const now=new Date(); const weekAgo=new Date(now.getTime()-7*86400000);
+  const week=DATA.ctl.filter(r=>r.date && new Date(r.date)>=weekAgo && r.status==='Done').length;
+  const agents=new Set(DATA.ctl.map(r=>r.agent)).size;
+  document.getElementById('k-ctl-total').textContent=total;
+  document.getElementById('k-ctl-pending').textContent=pending;
+  document.getElementById('k-ctl-week').textContent=week;
+  document.getElementById('k-ctl-agents').textContent=agents;
+}
+
+// ---------- Disputes ----------
+function submitDispute(){
+  const agent=document.getElementById('d-agent').value.trim();
+  const audit=document.getElementById('d-audit').value.trim();
+  const score=document.getElementById('d-score').value;
+  const questions=document.getElementById('d-questions').value.trim();
+  const reason=document.getElementById('d-reason').value.trim();
+
+  if(!agent||!audit||!reason){ alert('Agent name, Audit ID, and Reason are required.'); return; }
+
+  DATA.disputes.unshift({
+    id:uid('disp'), agent, audit, score: score===''? null : Number(score),
+    questions, reason, status:'Pending', resolutionNotes:'', submittedAt:new Date().toISOString()
+  });
+  saveData();
+  document.getElementById('d-agent').value='';
+  document.getElementById('d-audit').value='';
+  document.getElementById('d-score').value='';
+  document.getElementById('d-questions').value='';
+  document.getElementById('d-reason').value='';
+  renderDisputesTable();
+}
+function deleteDispute(id){
+  if(!confirm('Delete this dispute record?')) return;
+  DATA.disputes=DATA.disputes.filter(r=>r.id!==id); saveData(); renderDisputesTable();
+}
+let currentResolveId=null;
+function openResolve(id){
+  const r=DATA.disputes.find(x=>x.id===id); if(!r) return;
+  currentResolveId=id;
+  document.getElementById('rm-sub').textContent=r.audit+' — '+r.agent;
+  document.getElementById('rm-status').value=r.status;
+  document.getElementById('rm-notes').value=r.resolutionNotes||'';
+  document.getElementById('resolve-modal').classList.add('on');
+}
+function saveResolution(){
+  const r=DATA.disputes.find(x=>x.id===currentResolveId); if(!r) return;
+  r.status=document.getElementById('rm-status').value;
+  r.resolutionNotes=document.getElementById('rm-notes').value.trim();
+  saveData(); closeOverlay('resolve-modal'); renderDisputesTable();
+}
+function closeOverlay(id){ document.getElementById(id).classList.remove('on'); }
+
+function pillClass(status){
+  return {Pending:'p-pending',Valid:'p-valid',Invalid:'p-invalid',Rejected:'p-rejected'}[status]||'p-open';
+}
+function renderDisputesTable(){
+  const q=(document.getElementById('d-search').value||'').toLowerCase();
+  const st=document.getElementById('d-status-filter').value;
+  let rows=DATA.disputes.filter(r=>{
+    const matchQ=!q || r.agent.toLowerCase().includes(q);
+    const matchSt=!st || r.status===st;
+    return matchQ&&matchSt;
+  });
+  const tbody=document.getElementById('d-tbody');
+  tbody.innerHTML=rows.map(r=>`
+    <tr>
+      <td>${esc(r.audit)}</td>
+      <td>${esc(r.agent)}</td>
+      <td>${r.score!=null? r.score+'%':'—'}</td>
+      <td style="max-width:200px">${esc(r.questions||'—')}</td>
+      <td>${r.submittedAt? new Date(r.submittedAt).toLocaleDateString():'—'}</td>
+      <td><span class="pill ${pillClass(r.status)}">${esc(r.status)}</span></td>
+      <td style="max-width:180px">${esc(r.resolutionNotes||'—')}</td>
+      <td class="row-actions">
+        <button class="btn" onclick="openResolve('${r.id}')">Resolve</button>
+        <button class="btn" onclick="deleteDispute('${r.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+  document.getElementById('d-empty').style.display = rows.length? 'none':'block';
+  updateDisputeKpis();
+}
+function updateDisputeKpis(){
+  document.getElementById('k-d-total').textContent=DATA.disputes.length;
+  document.getElementById('k-d-pending').textContent=DATA.disputes.filter(r=>r.status==='Pending').length;
+  document.getElementById('k-d-valid').textContent=DATA.disputes.filter(r=>r.status==='Valid').length;
+  document.getElementById('k-d-invalid').textContent=DATA.disputes.filter(r=>r.status==='Invalid'||r.status==='Rejected').length;
+}
+
+// ---------- Export / Import / Clear ----------
+function exportData(){
+  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='qms-coaching-disputes-'+todayISO()+'.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+function importData(evt){
+  const file=evt.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const incoming=JSON.parse(e.target.result);
+      const existingCtlIds=new Set(DATA.ctl.map(r=>r.id));
+      const existingDispIds=new Set(DATA.disputes.map(r=>r.id));
+      (incoming.ctl||[]).forEach(r=>{ if(!existingCtlIds.has(r.id)) DATA.ctl.push(r); });
+      (incoming.disputes||[]).forEach(r=>{ if(!existingDispIds.has(r.id)) DATA.disputes.push(r); });
+      DATA.ctl.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
+      DATA.disputes.sort((a,b)=>new Date(b.submittedAt||0)-new Date(a.submittedAt||0));
+      saveData(); renderCTLTable(); renderDisputesTable();
+      alert('Import complete: merged '+(incoming.ctl||[]).length+' coaching record(s) and '+(incoming.disputes||[]).length+' dispute record(s).');
+    }catch(err){ alert('Could not read file — make sure it is a JSON file exported from this tool.'); }
+    evt.target.value='';
+  };
+  reader.readAsText(file);
+}
+function clearAll(){
+  DATA={ctl:[],disputes:[]}; saveData(); renderCTLTable(); renderDisputesTable();
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ---------- Init ----------
+document.getElementById('c-date').value=todayISO();
+buildActionsGrid();
+renderCTLTable();
+renderDisputesTable();
+</script>
+</body>
+</html>
