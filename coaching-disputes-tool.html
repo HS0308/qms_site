@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Quality Coaching &amp; Disputes Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#f4f6f9;--surface:#ffffff;--surface2:#f7f9fc;--bdr:#e3e8ef;--text:#1c2536;--text2:#4b5468;--text3:#8891a3;
@@ -78,16 +79,19 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
 <header>
   <div>
-    <h1>Quality Coaching &amp; Disputes Tool <span class="badge">No cloud · Local only</span></h1>
-    <div class="sub">Runs entirely in this browser tab — no server, no account, no data leaves this device unless you export it.</div>
+    <h1>Quality Coaching &amp; Disputes Tool <span class="badge">No cloud · Excel file only</span></h1>
+    <div class="sub">Runs entirely in this browser tab. Data lives in an <b>Excel workbook (.xlsx)</b> you open and save yourself — nothing is stored on a server, database, or cloud account.</div>
   </div>
   <div class="hdr-actions">
-    <button class="btn" onclick="exportData()">⬇ Export team file (.json)</button>
-    <button class="btn" onclick="document.getElementById('import-file').click()">⬆ Import team file</button>
-    <input type="file" id="import-file" accept="application/json" style="display:none" onchange="importData(event)"/>
-    <button class="btn" onclick="if(confirm('Clear ALL local data on this device? This cannot be undone.'))clearAll()">Clear data</button>
+    <button class="btn" onclick="document.getElementById('import-file').click()">📂 Open Excel file</button>
+    <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
+    <button class="btn-p" onclick="exportExcel()">💾 Save to Excel</button>
+    <button class="btn" onclick="if(confirm('Clear all unsaved entries from this session? This cannot be undone.'))clearAll()">Clear session</button>
   </div>
 </header>
+<div id="file-status" style="background:var(--amber-l);color:var(--amber);font-size:12px;padding:7px 22px;border-bottom:1px solid var(--bdr)">
+  ⚠ No Excel file loaded yet — working in an unsaved session. Click <b>Save to Excel</b> to download a workbook, or <b>Open Excel file</b> to continue an existing one.
+</div>
 
 <div class="tabs">
   <div class="tab on" data-tab="coaching" onclick="showTab('coaching')">Coaching (CTL)</div>
@@ -99,7 +103,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
   <!-- ============ COACHING (CTL) PANEL ============ -->
   <div class="panel on" id="panel-coaching">
-    <div class="storage-note">Data is saved to <b>this browser's local storage</b> as you type/submit. Use <b>Export</b> to hand a snapshot to a teammate or save a backup — nothing is uploaded automatically.</div>
+    <div class="storage-note">Entries you submit are held in this tab until you click <b>Save to Excel</b> — that writes/updates a real <code>.xlsx</code> workbook you download and keep wherever your team already shares files (shared drive, email, chat). Open that same file next time via <b>Open Excel file</b> to keep adding to it.</div>
 
     <div class="kpis">
       <div class="kpi"><div class="l">Total coaching sessions</div><div class="v" id="k-ctl-total">0</div></div>
@@ -157,7 +161,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
   <!-- ============ DISPUTES PANEL ============ -->
   <div class="panel" id="panel-disputes">
-    <div class="storage-note">Same rule applies here: everything is stored locally in this tab. Export the file after each shift and share it (email, chat, shared drive) so supervisors/QA on other machines can Import and stay in sync — no live server required.</div>
+    <div class="storage-note">Same rule applies here: submitted disputes stay in this tab until you <b>Save to Excel</b>. Share that workbook after each shift so supervisors/QA on other machines can open it, add resolutions, and re-save — no live server required.</div>
 
     <div class="kpis">
       <div class="kpi"><div class="l">Total disputes</div><div class="v" id="k-d-total">0</div></div>
@@ -211,17 +215,18 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
       <p style="font-size:13px;color:var(--text2);line-height:1.6">
         A single self-contained HTML file for two QMS workflows — <b>Close the Loop (CTL) coaching</b> and
         <b>audit score disputes</b> — that any teammate can open directly in a browser with no install, no login,
-        and no shared database. Everyone's records live only in their own browser (<code>localStorage</code>).
+        and no shared database. All records are stored in a plain Excel workbook (<code>.xlsx</code>) that you save and share yourself.
       </p>
       <h2 style="margin-top:16px">Sharing across the team without a cloud backend</h2>
       <ul style="font-size:13px;color:var(--text2);line-height:1.8">
         <li>Copy this <code>coaching-disputes-tool.html</code> file to any shared drive, USB, chat, or intranet link — each person opens it locally.</li>
-        <li>Use <b>Export team file (.json)</b> to save a snapshot of your entries, then send that file to a supervisor/QA lead.</li>
-        <li>They use <b>Import team file</b> to merge those records into their own copy of the tool.</li>
-        <li>No server, no signup, no recurring cost, and no company data stored on any third-party cloud.</li>
+        <li>Click <b>Save to Excel</b> to download a <code>.xlsx</code> workbook with a <b>Coaching (CTL)</b> sheet and a <b>Disputes</b> sheet — this is the actual record.</li>
+        <li>Put that workbook on your normal shared drive / email / Teams / SharePoint. Whoever needs to add or update records clicks <b>Open Excel file</b>, picks that same workbook, and their entries load into the tool.</li>
+        <li>After adding new sessions/disputes, click <b>Save to Excel</b> again and re-upload the file to the shared location — this is the "sync" step, done manually so there is no live database or server anywhere.</li>
+        <li>The workbook can also be opened directly in Excel/Google Sheets/Numbers for reporting, filtering, or pivot tables — it's a plain spreadsheet, not a proprietary format.</li>
       </ul>
       <h2 style="margin-top:16px">Data location</h2>
-      <p style="font-size:13px;color:var(--text2)">All data is stored under the browser's local storage key <code>qms_local_v1</code>. Clearing browser data, using a different browser, or opening the file in private/incognito mode will not show previously saved records unless you re-import an exported file.</p>
+      <p style="font-size:13px;color:var(--text2)">While you're working in a session, unsaved entries are kept only in this browser tab's memory — closing the tab without clicking <b>Save to Excel</b> loses them. The <b>.xlsx file you download is the single source of truth</b>; there is no separate hidden storage, database, or cloud account involved.</p>
     </div>
   </div>
 
@@ -252,18 +257,23 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 </div>
 
 <script>
-const STORE_KEY='qms_local_v1';
 const COACHED_ACTIONS=['Reviewed audit findings','Discussed compliance gap','Role-play/practice','Set improvement goal','Shared training material','Escalated to team lead'];
 
-function loadData(){
-  try{
-    const raw=localStorage.getItem(STORE_KEY);
-    if(raw) return JSON.parse(raw);
-  }catch(e){}
-  return {ctl:[],disputes:[]};
+// In-memory only for the current session — the loaded/saved .xlsx file is the real record.
+let DATA={ctl:[],disputes:[]};
+let currentFileName=null;
+function saveData(){ /* no-op: nothing is persisted until "Save to Excel" is clicked */ }
+function markUnsaved(){
+  const s=document.getElementById('file-status');
+  s.style.background='var(--amber-l)'; s.style.color='var(--amber)';
+  s.innerHTML='⚠ Unsaved changes'+(currentFileName? ' in <b>'+esc(currentFileName)+'</b>':'')+' — click <b>Save to Excel</b> to write them to the workbook.';
 }
-let DATA=loadData();
-function saveData(){ localStorage.setItem(STORE_KEY, JSON.stringify(DATA)); }
+function markSaved(name){
+  currentFileName=name;
+  const s=document.getElementById('file-status');
+  s.style.background='var(--green-l)'; s.style.color='var(--green)';
+  s.innerHTML='✓ Saved to <b>'+esc(name)+'</b>. Share this file with your team; re-open it here to keep adding records.';
+}
 
 function uid(prefix){ return prefix+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
@@ -295,7 +305,7 @@ function submitCTL(){
     id:uid('ctl'), agent, audit, score: score===''? null : Number(score),
     coach, date, notes, actions, status:'Done', createdAt:new Date().toISOString()
   });
-  saveData();
+  markUnsaved();
   document.getElementById('c-agent').value='';
   document.getElementById('c-audit').value='';
   document.getElementById('c-score').value='';
@@ -307,7 +317,7 @@ function submitCTL(){
 }
 function deleteCTL(id){
   if(!confirm('Delete this coaching record?')) return;
-  DATA.ctl=DATA.ctl.filter(r=>r.id!==id); saveData(); renderCTLTable();
+  DATA.ctl=DATA.ctl.filter(r=>r.id!==id); markUnsaved(); renderCTLTable();
 }
 function renderCTLTable(){
   const q=(document.getElementById('ctl-search').value||'').toLowerCase();
@@ -358,7 +368,7 @@ function submitDispute(){
     id:uid('disp'), agent, audit, score: score===''? null : Number(score),
     questions, reason, status:'Pending', resolutionNotes:'', submittedAt:new Date().toISOString()
   });
-  saveData();
+  markUnsaved();
   document.getElementById('d-agent').value='';
   document.getElementById('d-audit').value='';
   document.getElementById('d-score').value='';
@@ -368,7 +378,7 @@ function submitDispute(){
 }
 function deleteDispute(id){
   if(!confirm('Delete this dispute record?')) return;
-  DATA.disputes=DATA.disputes.filter(r=>r.id!==id); saveData(); renderDisputesTable();
+  DATA.disputes=DATA.disputes.filter(r=>r.id!==id); markUnsaved(); renderDisputesTable();
 }
 let currentResolveId=null;
 function openResolve(id){
@@ -383,7 +393,7 @@ function saveResolution(){
   const r=DATA.disputes.find(x=>x.id===currentResolveId); if(!r) return;
   r.status=document.getElementById('rm-status').value;
   r.resolutionNotes=document.getElementById('rm-notes').value.trim();
-  saveData(); closeOverlay('resolve-modal'); renderDisputesTable();
+  markUnsaved(); closeOverlay('resolve-modal'); renderDisputesTable();
 }
 function closeOverlay(id){ document.getElementById(id).classList.remove('on'); }
 
@@ -423,36 +433,72 @@ function updateDisputeKpis(){
   document.getElementById('k-d-invalid').textContent=DATA.disputes.filter(r=>r.status==='Invalid'||r.status==='Rejected').length;
 }
 
-// ---------- Export / Import / Clear ----------
-function exportData(){
-  const blob=new Blob([JSON.stringify(DATA,null,2)],{type:'application/json'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url; a.download='qms-coaching-disputes-'+todayISO()+'.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  URL.revokeObjectURL(url);
+// ---------- Excel Save / Open / Clear ----------
+function exportExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel library failed to load (no internet access on first load?). Please check your connection and reload the page.'); return; }
+
+  const ctlRows=DATA.ctl.map(r=>({
+    'Audit ID':r.audit,'Agent':r.agent,'Score (%)':r.score,'Coach/Supervisor':r.coach,
+    'Coaching Date':r.date,'Coached Actions':(r.actions||[]).join('; '),'Session Notes':r.notes,
+    'Status':r.status,'Record ID':r.id,'Created At':r.createdAt
+  }));
+  const dispRows=DATA.disputes.map(r=>({
+    'Audit ID':r.audit,'Agent':r.agent,'Original Score (%)':r.score,'Disputed Questions/Criteria':r.questions,
+    'Dispute Reason':r.reason,'Status':r.status,'Resolution Notes':r.resolutionNotes,
+    'Record ID':r.id,'Submitted At':r.submittedAt
+  }));
+
+  const wb=XLSX.utils.book_new();
+  const wsCtl=XLSX.utils.json_to_sheet(ctlRows.length? ctlRows : [{}]);
+  const wsDisp=XLSX.utils.json_to_sheet(dispRows.length? dispRows : [{}]);
+  XLSX.utils.book_append_sheet(wb, wsCtl, 'Coaching (CTL)');
+  XLSX.utils.book_append_sheet(wb, wsDisp, 'Disputes');
+
+  const filename=currentFileName || ('qms-coaching-disputes-'+todayISO()+'.xlsx');
+  XLSX.writeFile(wb, filename);
+  markSaved(filename);
 }
-function importData(evt){
+
+function importExcel(evt){
   const file=evt.target.files[0]; if(!file) return;
+  if(typeof XLSX==='undefined'){ alert('Excel library failed to load (no internet access on first load?). Please check your connection and reload the page.'); return; }
   const reader=new FileReader();
   reader.onload=function(e){
     try{
-      const incoming=JSON.parse(e.target.result);
-      const existingCtlIds=new Set(DATA.ctl.map(r=>r.id));
-      const existingDispIds=new Set(DATA.disputes.map(r=>r.id));
-      (incoming.ctl||[]).forEach(r=>{ if(!existingCtlIds.has(r.id)) DATA.ctl.push(r); });
-      (incoming.disputes||[]).forEach(r=>{ if(!existingDispIds.has(r.id)) DATA.disputes.push(r); });
-      DATA.ctl.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));
-      DATA.disputes.sort((a,b)=>new Date(b.submittedAt||0)-new Date(a.submittedAt||0));
-      saveData(); renderCTLTable(); renderDisputesTable();
-      alert('Import complete: merged '+(incoming.ctl||[]).length+' coaching record(s) and '+(incoming.disputes||[]).length+' dispute record(s).');
-    }catch(err){ alert('Could not read file — make sure it is a JSON file exported from this tool.'); }
+      const wb=XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      const ctlSheet=wb.Sheets['Coaching (CTL)'];
+      const dispSheet=wb.Sheets['Disputes'];
+      const ctlRows=ctlSheet? XLSX.utils.sheet_to_json(ctlSheet) : [];
+      const dispRows=dispSheet? XLSX.utils.sheet_to_json(dispSheet) : [];
+
+      DATA.ctl=ctlRows.filter(r=>r['Audit ID']).map(r=>({
+        id:r['Record ID']||uid('ctl'), audit:r['Audit ID']||'', agent:r['Agent']||'',
+        score:r['Score (%)']===undefined||r['Score (%)']===''? null:Number(r['Score (%)']),
+        coach:r['Coach/Supervisor']||'', date:r['Coaching Date']||'',
+        actions:(r['Coached Actions']||'').toString().split(';').map(s=>s.trim()).filter(Boolean),
+        notes:r['Session Notes']||'', status:r['Status']||'Done', createdAt:r['Created At']||new Date().toISOString()
+      }));
+      DATA.disputes=dispRows.filter(r=>r['Audit ID']).map(r=>({
+        id:r['Record ID']||uid('disp'), audit:r['Audit ID']||'', agent:r['Agent']||'',
+        score:r['Original Score (%)']===undefined||r['Original Score (%)']===''? null:Number(r['Original Score (%)']),
+        questions:r['Disputed Questions/Criteria']||'', reason:r['Dispute Reason']||'',
+        status:r['Status']||'Pending', resolutionNotes:r['Resolution Notes']||'',
+        submittedAt:r['Submitted At']||new Date().toISOString()
+      }));
+
+      renderCTLTable(); renderDisputesTable();
+      markSaved(file.name);
+      alert('Loaded '+DATA.ctl.length+' coaching record(s) and '+DATA.disputes.length+' dispute record(s) from '+file.name+'.');
+    }catch(err){ alert('Could not read this file — make sure it is an .xlsx workbook saved by this tool (or with matching "Coaching (CTL)" / "Disputes" sheet names).'); }
     evt.target.value='';
   };
-  reader.readAsText(file);
+  reader.readAsArrayBuffer(file);
 }
 function clearAll(){
-  DATA={ctl:[],disputes:[]}; saveData(); renderCTLTable(); renderDisputesTable();
+  DATA={ctl:[],disputes:[]}; currentFileName=null; renderCTLTable(); renderDisputesTable();
+  const s=document.getElementById('file-status');
+  s.style.background='var(--amber-l)'; s.style.color='var(--amber)';
+  s.innerHTML='⚠ No Excel file loaded yet — working in an unsaved session. Click <b>Save to Excel</b> to download a workbook, or <b>Open Excel file</b> to continue an existing one.';
 }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
