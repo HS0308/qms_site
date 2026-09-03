@@ -7,22 +7,65 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#f4f6f9;--surface:#ffffff;--surface2:#f7f9fc;--bdr:#e3e8ef;--text:#1c2536;--text2:#4b5468;--text3:#8891a3;
-  --blue:#2563eb;--blue-l:#eaf1fe;--green:#16a34a;--green-l:#eafaf0;--red:#dc2626;--red-l:#fdecec;
-  --amber:#d97706;--amber-l:#fef6e6;--purple:#7c3aed;--purple-l:#f2ecfd;--r:8px;
+  --bg:#F4F6FA;--surface:#FFFFFF;--surface2:#F0F3F9;--bdr:#E2E8F0;
+  --text:#1A202C;--text2:#4A5568;--text3:#A0AEC0;
+  --blue:#001B6C;--blue-dark:#001055;--blue-light:#E6EAF5;
+  --green:#2DC48D;--green-l:#E8F9F3;
+  --red:#C0392B;--red-l:#FCEAE8;
+  --amber:#F5A623;--amber-l:#FEF6E8;
+  --purple:#cd3281;--purple-l:rgba(205,50,129,.12);
+  --r:8px;--rl:12px;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:Calibri,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:var(--surface);border-bottom:1px solid var(--bdr);padding:14px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
-header h1{font-size:17px;margin:0;font-weight:800}
-header .sub{font-size:11px;color:var(--text3);margin-top:2px}
-.badge{background:var(--green-l);color:var(--green);font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-left:8px;letter-spacing:.03em;text-transform:uppercase}
-.hdr-actions{display:flex;gap:8px}
-button{font-family:inherit;cursor:pointer}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+
+/* ── SIGN-IN SCREEN ── */
+.signin-screen{display:none;min-height:100vh;background:var(--bg);align-items:center;justify-content:center;padding:2rem}
+.signin-screen.show{display:flex}
+.signin-card{background:#fff;border:1px solid var(--bdr);border-radius:var(--rl);padding:2.25rem 2rem;width:100%;max-width:420px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.signin-logo-wrap{display:flex;align-items:center;gap:8px;justify-content:center;margin-bottom:.6rem}
+.signin-badge{background:var(--blue);color:#fff;font-size:9px;font-weight:700;padding:3px 7px;border-radius:4px;letter-spacing:.04em}
+.signin-tool-name{font-size:12px;font-weight:700;color:var(--text2);text-align:center;margin-bottom:.25rem;letter-spacing:.05em;text-transform:uppercase}
+.signin-title{font-size:21px;font-weight:800;color:var(--text);text-align:center;margin-bottom:.25rem}
+.signin-sub{font-size:12.5px;color:var(--text2);text-align:center;margin-bottom:1.6rem}
+.signin-field{margin-bottom:1rem}
+.signin-field label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;letter-spacing:.04em;text-transform:uppercase}
+.signin-field input,.signin-field select{width:100%;background:var(--surface2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 12px;color:var(--text);font-size:14px;outline:none}
+.signin-field input:focus,.signin-field select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-light)}
+.signin-btn{width:100%;padding:11px;background:var(--blue);border:none;border-radius:var(--r);color:#fff;font-size:14px;font-weight:700;margin-top:.25rem}
+.signin-btn:hover{background:var(--blue-dark)}
+.signin-link{text-align:center;margin-top:14px;font-size:12.5px;color:var(--text2)}
+.signin-link a{color:var(--blue);cursor:pointer;font-weight:700;text-decoration:none}
+.signin-link a:hover{text-decoration:underline}
+.signin-error{background:var(--red-l);border:1px solid var(--red);border-radius:var(--r);padding:8px 12px;font-size:12px;color:var(--red);font-weight:700;margin-bottom:1rem;display:none}
+.signin-error.show{display:block}
+.signin-roster{max-height:230px;overflow-y:auto;margin-bottom:1rem;border:1px solid var(--bdr);border-radius:var(--r)}
+.signin-roster-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:1px solid var(--bdr);cursor:pointer}
+.signin-roster-row:last-child{border-bottom:none}
+.signin-roster-row:hover{background:var(--surface2)}
+.signin-roster-name{font-size:13px;font-weight:700;color:var(--text)}
+.signin-roster-role{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em}
+.signin-empty{padding:14px;text-align:center;font-size:12px;color:var(--text3)}
+
+/* ── APP CHROME ── */
+#app{display:none}
+header{background:var(--blue);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+header h1{font-size:17px;margin:0;font-weight:800;color:#fff}
+header .sub{font-size:11px;color:rgba(255,255,255,.72);margin-top:2px}
+.badge{background:rgba(255,255,255,.18);color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;margin-left:8px;letter-spacing:.03em;text-transform:uppercase;border:1px solid rgba(255,255,255,.3)}
+.hdr-actions{display:flex;gap:8px;align-items:center}
+.hdr-user{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:20px;padding:4px 6px 4px 12px;margin-right:4px}
+.hdr-user .uav{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff}
+.hdr-user .un{font-size:12px;font-weight:700;color:#fff}
+.hdr-user .ur{font-size:9.5px;color:rgba(255,255,255,.7);text-transform:uppercase}
 .btn{border:1px solid var(--bdr);background:var(--surface);color:var(--text2);border-radius:var(--r);padding:8px 13px;font-size:12.5px;font-weight:600}
 .btn:hover{background:var(--surface2)}
-.btn-p{background:var(--blue);border-color:var(--blue);color:#fff}
-.btn-p:hover{background:#1d4fd8}
+.btn-light{border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff}
+.btn-light:hover{background:rgba(255,255,255,.18)}
+.btn-p{background:var(--green);border-color:var(--green);color:#fff}
+.btn-p:hover{background:#25a877}
 .btn-d{background:var(--red);border-color:var(--red);color:#fff}
 .tabs{display:flex;gap:4px;padding:0 22px;background:var(--surface);border-bottom:1px solid var(--bdr)}
 .tab{padding:12px 16px;font-size:13px;font-weight:700;color:var(--text3);border-bottom:2px solid transparent;cursor:pointer}
@@ -30,22 +73,24 @@ button{font-family:inherit;cursor:pointer}
 main{padding:20px 22px;max-width:1200px;margin:0 auto}
 .panel{display:none}
 .panel.on{display:block}
-.card{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:16px 18px;margin-bottom:16px}
-.card h2{font-size:14px;margin:0 0 12px;font-weight:800}
+.card{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px 18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card h2{font-size:14px;margin:0 0 12px;font-weight:800;color:var(--text)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 label{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
 input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:8px 10px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+input[readonly]{background:var(--blue-light);color:var(--blue);font-weight:700}
 textarea{resize:vertical;min-height:80px}
 .field{margin-bottom:12px}
 .chk-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
 .chk{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--bdr);border-radius:6px;padding:7px 9px;font-size:12.5px}
 .chk input{width:auto}
-.info{background:var(--blue-l);color:var(--blue);border-radius:6px;padding:9px 12px;font-size:12px;margin-top:10px}
+.info{background:var(--blue-light);color:var(--blue);border-radius:6px;padding:9px 12px;font-size:12px;margin-top:10px}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.kpi{background:var(--surface);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px}
-.kpi .l{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em}
-.kpi .v{font-size:22px;font-weight:800;margin-top:4px}
+.kpi{background:var(--surface);border:1px solid var(--bdr);border-radius:var(--rl);padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.kpi .l{font-size:10.5px;color:var(--text2);text-transform:uppercase;letter-spacing:.03em;font-weight:600}
+.kpi .v{font-size:22px;font-weight:800;margin-top:4px;color:var(--text)}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
 th{text-align:left;background:var(--surface2);color:var(--text3);font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;padding:9px 10px;border-bottom:1px solid var(--bdr)}
 td{padding:9px 10px;border-bottom:1px solid var(--bdr)}
@@ -57,13 +102,16 @@ tr:last-child td{border-bottom:none}
 .p-valid{background:var(--green-l);color:var(--green)}
 .p-invalid{background:var(--red-l);color:var(--red)}
 .p-rejected{background:var(--red-l);color:var(--red)}
+.role-admin{background:var(--purple-l);color:var(--purple)}
+.role-supervisor{background:var(--blue-light);color:var(--blue)}
+.role-agent{background:var(--green-l);color:var(--green)}
 .row-actions{display:flex;gap:6px}
 .row-actions button{padding:5px 9px;font-size:11.5px}
 .toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .toolbar input[type=text]{width:220px}
 .overlay{display:none;position:fixed;inset:0;background:rgba(15,20,30,.5);align-items:center;justify-content:center;z-index:100}
 .overlay.on{display:flex}
-.modal{background:var(--surface);border-radius:10px;width:560px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.modal{background:var(--surface);border-radius:var(--rl);width:560px;max-width:92vw;max-height:88vh;overflow-y:auto}
 .mh{display:flex;justify-content:space-between;align-items:flex-start;padding:16px 18px;border-bottom:1px solid var(--bdr)}
 .mh-title{font-size:15px;font-weight:800}
 .mh-sub{font-size:11.5px;color:var(--text3);margin-top:3px}
@@ -72,30 +120,83 @@ tr:last-child td{border-bottom:none}
 .mf{padding:14px 18px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:8px}
 .empty{text-align:center;color:var(--text3);font-size:12.5px;padding:26px 0}
 footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
-.storage-note{font-size:11px;color:var(--text3);background:var(--surface2);border:1px dashed var(--bdr);border-radius:6px;padding:8px 10px;margin-bottom:14px}
+.storage-note{font-size:11px;color:var(--text2);background:var(--surface2);border:1px dashed var(--bdr);border-radius:6px;padding:8px 10px;margin-bottom:14px}
+#file-status{font-size:12px;padding:7px 22px;border-bottom:1px solid var(--bdr)}
 </style>
 </head>
 <body>
 
+<!-- ══════════════ SIGN-IN SCREEN ══════════════ -->
+<div class="signin-screen show" id="signin-screen">
+  <div class="signin-card">
+    <div class="signin-logo-wrap">
+      <span class="signin-badge">QMS</span>
+    </div>
+    <div class="signin-tool-name">Quality Coaching &amp; Disputes Tool</div>
+    <div class="signin-title" id="signin-title">Welcome</div>
+    <div class="signin-sub" id="signin-sub">Sign in with your name so your coaching sessions and disputes are logged automatically.</div>
+
+    <div class="signin-error" id="signin-error"></div>
+
+    <!-- Existing roster (loaded from the Excel workbook's Users sheet) -->
+    <div id="signin-roster-wrap">
+      <div class="signin-roster" id="signin-roster"></div>
+      <div class="signin-link" style="margin-bottom:1rem"><a onclick="showAddUserForm()">+ Add a new team member</a></div>
+      <div class="signin-link"><a onclick="document.getElementById('signin-import-file').click()">📂 Open an existing Excel file first</a></div>
+      <input type="file" id="signin-import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
+    </div>
+
+    <!-- Add / sign in as new user -->
+    <div id="signin-new-wrap" style="display:none">
+      <div class="signin-field">
+        <label>Your full name</label>
+        <input type="text" id="signin-name" placeholder="e.g. Sara Mitchell" onkeydown="if(event.key==='Enter') doSignIn()"/>
+      </div>
+      <div class="signin-field">
+        <label>Your role</label>
+        <select id="signin-role">
+          <option value="Agent">Agent</option>
+          <option value="Supervisor">Supervisor / QA</option>
+          <option value="Admin">Admin</option>
+        </select>
+      </div>
+      <button class="signin-btn" onclick="doSignIn()">Sign in</button>
+      <div class="signin-link" id="signin-back-link" style="display:none"><a onclick="showRoster()">&larr; Back to team list</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+
 <header>
   <div>
     <h1>Quality Coaching &amp; Disputes Tool <span class="badge">No cloud · Excel file only</span></h1>
-    <div class="sub">Runs entirely in this browser tab. Data lives in an <b>Excel workbook (.xlsx)</b> you open and save yourself — nothing is stored on a server, database, or cloud account.</div>
+    <div class="sub">Runs entirely in this browser tab. Data lives in an <b>Excel workbook (.xlsx)</b> — nothing is stored on a server, database, or cloud account.</div>
   </div>
   <div class="hdr-actions">
-    <button class="btn" onclick="document.getElementById('import-file').click()">📂 Open Excel file</button>
+    <div class="hdr-user">
+      <div class="uav" id="hdr-uav">–</div>
+      <div>
+        <div class="un" id="hdr-uname">–</div>
+        <div class="ur" id="hdr-urole">–</div>
+      </div>
+    </div>
+    <button class="btn-light" onclick="doSignOut()">Logout</button>
+    <button class="btn-light" onclick="document.getElementById('import-file').click()">📂 Open</button>
     <input type="file" id="import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
+    <button class="btn-light" id="connect-btn" onclick="connectExcelFile()" title="Connect a file so every submission auto-saves">🔗 Auto-save to file</button>
     <button class="btn-p" onclick="exportExcel()">💾 Save to Excel</button>
-    <button class="btn" onclick="if(confirm('Clear all unsaved entries from this session? This cannot be undone.'))clearAll()">Clear session</button>
   </div>
 </header>
-<div id="file-status" style="background:var(--amber-l);color:var(--amber);font-size:12px;padding:7px 22px;border-bottom:1px solid var(--bdr)">
-  ⚠ No Excel file loaded yet — working in an unsaved session. Click <b>Save to Excel</b> to download a workbook, or <b>Open Excel file</b> to continue an existing one.
+<div id="file-status" style="background:var(--amber-l);color:var(--amber)">
+  ⚠ No Excel file connected — working in an unsaved session. Click <b>🔗 Auto-save to file</b> (Chrome/Edge) to save every submission automatically, or use <b>Save to Excel</b> / <b>Open</b> manually.
 </div>
 
 <div class="tabs">
   <div class="tab on" data-tab="coaching" onclick="showTab('coaching')">Coaching (CTL)</div>
   <div class="tab" data-tab="disputes" onclick="showTab('disputes')">Disputes</div>
+  <div class="tab" data-tab="users" onclick="showTab('users')">User Management</div>
   <div class="tab" data-tab="help" onclick="showTab('help')">How this works</div>
 </div>
 
@@ -103,7 +204,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
   <!-- ============ COACHING (CTL) PANEL ============ -->
   <div class="panel on" id="panel-coaching">
-    <div class="storage-note">Entries you submit are held in this tab until you click <b>Save to Excel</b> — that writes/updates a real <code>.xlsx</code> workbook you download and keep wherever your team already shares files (shared drive, email, chat). Open that same file next time via <b>Open Excel file</b> to keep adding to it.</div>
+    <div class="storage-note">Every <b>Submit CTL</b> auto-saves to your connected Excel workbook (or downloads a fresh copy if none is connected) — the workbook is the real record, shareable with the team via your normal shared drive / email / chat.</div>
 
     <div class="kpis">
       <div class="kpi"><div class="l">Total coaching sessions</div><div class="v" id="k-ctl-total">0</div></div>
@@ -131,7 +232,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
         <label>Session notes</label>
         <textarea id="c-notes" placeholder="Describe the coaching session, key points discussed, and agent acknowledgment..."></textarea>
       </div>
-      <div class="info">ℹ Submitting will log this session as <b>CTL Done</b> in the table below. Keep a copy via Export for your records.</div>
+      <div class="info">ℹ Submitting will log this session as <b>CTL Done</b> and auto-save to Excel.</div>
       <div style="margin-top:12px;text-align:right"><button class="btn-p" onclick="submitCTL()">Submit CTL</button></div>
     </div>
 
@@ -161,7 +262,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
   <!-- ============ DISPUTES PANEL ============ -->
   <div class="panel" id="panel-disputes">
-    <div class="storage-note">Same rule applies here: submitted disputes stay in this tab until you <b>Save to Excel</b>. Share that workbook after each shift so supervisors/QA on other machines can open it, add resolutions, and re-save — no live server required.</div>
+    <div class="storage-note">Same rule applies here: every submitted dispute or resolution auto-saves to the connected Excel workbook — no live server required.</div>
 
     <div class="kpis">
       <div class="kpi"><div class="l">Total disputes</div><div class="v" id="k-d-total">0</div></div>
@@ -208,31 +309,66 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
     </div>
   </div>
 
+  <!-- ============ USERS PANEL ============ -->
+  <div class="panel" id="panel-users">
+    <div class="storage-note">The team roster below travels inside the Excel workbook (a <b>Users</b> sheet) so it's shared the same way as the coaching/dispute records — still no separate account system or cloud database.</div>
+    <div class="card">
+      <h2>Add a team member</h2>
+      <div class="grid3">
+        <div class="field"><label>Full name</label><input type="text" id="u-name" placeholder="e.g. Tom Fischer"/></div>
+        <div class="field"><label>Role</label>
+          <select id="u-role">
+            <option value="Agent">Agent</option>
+            <option value="Supervisor">Supervisor / QA</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex;align-items:flex-end"><button class="btn-p" style="width:100%" onclick="addUser()">Add user</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Team roster</h2>
+      <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Name</th><th>Role</th><th></th></tr></thead>
+        <tbody id="u-tbody"></tbody>
+      </table>
+      </div>
+      <div id="u-empty" class="empty" style="display:none">No team members yet — add one above.</div>
+    </div>
+  </div>
+
   <!-- ============ HELP PANEL ============ -->
   <div class="panel" id="panel-help">
     <div class="card">
       <h2>What this tool is</h2>
       <p style="font-size:13px;color:var(--text2);line-height:1.6">
         A single self-contained HTML file for two QMS workflows — <b>Close the Loop (CTL) coaching</b> and
-        <b>audit score disputes</b> — that any teammate can open directly in a browser with no install, no login,
-        and no shared database. All records are stored in a plain Excel workbook (<code>.xlsx</code>) that you save and share yourself.
+        <b>audit score disputes</b> — plus a lightweight sign-in so agent/supervisor names are logged automatically.
+        All records are stored in a plain Excel workbook (<code>.xlsx</code>) — no server, login system, or cloud account behind it.
       </p>
+      <h2 style="margin-top:16px">Automatic saving</h2>
+      <ul style="font-size:13px;color:var(--text2);line-height:1.8">
+        <li>In <b>Chrome or Edge</b>, click <b>🔗 Auto-save to file</b> once, pick or create an <code>.xlsx</code> file — after that, every submission, resolution, or new user writes straight to that file on your disk automatically, no repeated downloads.</li>
+        <li>In other browsers (Firefox, Safari) that API isn't available, so use <b>Save to Excel</b> after you're done making changes, and <b>Open</b> to resume an existing workbook.</li>
+      </ul>
       <h2 style="margin-top:16px">Sharing across the team without a cloud backend</h2>
       <ul style="font-size:13px;color:var(--text2);line-height:1.8">
         <li>Copy this <code>coaching-disputes-tool.html</code> file to any shared drive, USB, chat, or intranet link — each person opens it locally.</li>
-        <li>Click <b>Save to Excel</b> to download a <code>.xlsx</code> workbook with a <b>Coaching (CTL)</b> sheet and a <b>Disputes</b> sheet — this is the actual record.</li>
-        <li>Put that workbook on your normal shared drive / email / Teams / SharePoint. Whoever needs to add or update records clicks <b>Open Excel file</b>, picks that same workbook, and their entries load into the tool.</li>
-        <li>After adding new sessions/disputes, click <b>Save to Excel</b> again and re-upload the file to the shared location — this is the "sync" step, done manually so there is no live database or server anywhere.</li>
-        <li>The workbook can also be opened directly in Excel/Google Sheets/Numbers for reporting, filtering, or pivot tables — it's a plain spreadsheet, not a proprietary format.</li>
+        <li>The workbook has three sheets: <b>Coaching (CTL)</b>, <b>Disputes</b>, and <b>Users</b> — put it on your normal shared drive / email / Teams / SharePoint.</li>
+        <li>Whoever needs to add or update records clicks <b>Open</b>, picks that same workbook, signs in from the roster, and their entries save back into it.</li>
+        <li>The workbook can also be opened directly in Excel/Google Sheets/Numbers for reporting, filtering, or pivot tables.</li>
       </ul>
-      <h2 style="margin-top:16px">Data location</h2>
-      <p style="font-size:13px;color:var(--text2)">While you're working in a session, unsaved entries are kept only in this browser tab's memory — closing the tab without clicking <b>Save to Excel</b> loses them. The <b>.xlsx file you download is the single source of truth</b>; there is no separate hidden storage, database, or cloud account involved.</p>
+      <h2 style="margin-top:16px">Sign-in &amp; data location</h2>
+      <p style="font-size:13px;color:var(--text2)">Sign-in is name-based (no password) purely to auto-fill and log who did what — it is not an authentication system. Nothing is written to browser storage; the current user is held only in this tab's memory and is cleared on Logout or when the tab closes. The <b>.xlsx file is the single source of truth</b>.</p>
     </div>
   </div>
 
 </main>
 
 <footer>Quality Coaching &amp; Disputes Tool · runs 100% client-side</footer>
+
+</div><!-- /#app -->
 
 <!-- Edit status modal (disputes) -->
 <div class="overlay" id="resolve-modal">
@@ -259,24 +395,94 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 <script>
 const COACHED_ACTIONS=['Reviewed audit findings','Discussed compliance gap','Role-play/practice','Set improvement goal','Shared training material','Escalated to team lead'];
 
-// In-memory only for the current session — the loaded/saved .xlsx file is the real record.
-let DATA={ctl:[],disputes:[]};
+// Everything lives only in this tab's memory. The connected/loaded .xlsx file is the real record.
+let DATA={ctl:[],disputes:[],users:[]};
 let currentFileName=null;
-function saveData(){ /* no-op: nothing is persisted until "Save to Excel" is clicked */ }
-function markUnsaved(){
-  const s=document.getElementById('file-status');
-  s.style.background='var(--amber-l)'; s.style.color='var(--amber)';
-  s.innerHTML='⚠ Unsaved changes'+(currentFileName? ' in <b>'+esc(currentFileName)+'</b>':'')+' — click <b>Save to Excel</b> to write them to the workbook.';
-}
-function markSaved(name){
-  currentFileName=name;
-  const s=document.getElementById('file-status');
-  s.style.background='var(--green-l)'; s.style.color='var(--green)';
-  s.innerHTML='✓ Saved to <b>'+esc(name)+'</b>. Share this file with your team; re-open it here to keep adding records.';
-}
+let fileHandle=null;      // File System Access API handle, when available/connected
+let currentUser=null;     // {id,name,role}
 
 function uid(prefix){ return prefix+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
+function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function roleClass(role){ return {Admin:'role-admin',Supervisor:'role-supervisor',Agent:'role-agent'}[role]||'role-agent'; }
+
+// ---------- Sign-in ----------
+function renderRoster(){
+  const wrap=document.getElementById('signin-roster');
+  if(!DATA.users.length){
+    wrap.innerHTML='<div class="signin-empty">No team members yet. Add yourself to get started, or open an existing workbook.</div>';
+  }else{
+    wrap.innerHTML=DATA.users.map(u=>`
+      <div class="signin-roster-row" onclick="signInAsUser('${u.id}')">
+        <div><div class="signin-roster-name">${esc(u.name)}</div></div>
+        <span class="pill ${roleClass(u.role)}">${esc(u.role)}</span>
+      </div>`).join('');
+  }
+}
+function showRoster(){
+  renderRoster();
+  document.getElementById('signin-roster-wrap').style.display='block';
+  document.getElementById('signin-new-wrap').style.display='none';
+  document.getElementById('signin-title').textContent='Welcome';
+  document.getElementById('signin-sub').textContent='Sign in with your name so your coaching sessions and disputes are logged automatically.';
+}
+function showAddUserForm(){
+  document.getElementById('signin-roster-wrap').style.display='none';
+  document.getElementById('signin-new-wrap').style.display='block';
+  document.getElementById('signin-back-link').style.display= DATA.users.length? 'block':'none';
+  document.getElementById('signin-title').textContent='Add yourself';
+  document.getElementById('signin-sub').textContent='This adds you to the shared team roster and signs you in.';
+  document.getElementById('signin-name').value='';
+  document.getElementById('signin-error').classList.remove('show');
+  document.getElementById('signin-name').focus();
+}
+function signInAsUser(id){
+  const u=DATA.users.find(x=>x.id===id); if(!u) return;
+  currentUser=u;
+  enterApp();
+}
+function doSignIn(){
+  const name=document.getElementById('signin-name').value.trim();
+  const role=document.getElementById('signin-role').value;
+  const errEl=document.getElementById('signin-error');
+  if(!name){ errEl.textContent='Please enter your name.'; errEl.classList.add('show'); return; }
+  errEl.classList.remove('show');
+
+  let u=DATA.users.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  if(!u){
+    u={id:uid('usr'), name, role};
+    DATA.users.push(u);
+    autoSaveAfterChange();
+  }
+  currentUser=u;
+  enterApp();
+}
+function enterApp(){
+  document.getElementById('signin-screen').classList.remove('show');
+  document.getElementById('app').style.display='block';
+  document.getElementById('hdr-uav').textContent=initials(currentUser.name);
+  document.getElementById('hdr-uname').textContent=currentUser.name;
+  document.getElementById('hdr-urole').textContent=currentUser.role;
+  prefillFromUser();
+  renderUsersTable();
+  renderCTLTable();
+  renderDisputesTable();
+}
+function doSignOut(){
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('signin-screen').classList.add('show');
+  showRoster();
+}
+function prefillFromUser(){
+  if(!currentUser) return;
+  if(currentUser.role==='Agent'){
+    const el=document.getElementById('d-agent'); el.value=currentUser.name; el.readOnly=true;
+  }else{
+    const el=document.getElementById('c-coach'); el.value=currentUser.name; el.readOnly=true;
+  }
+}
 
 // ---------- Tabs ----------
 function showTab(name){
@@ -285,10 +491,38 @@ function showTab(name){
   document.getElementById('panel-'+name).classList.add('on');
 }
 
+// ---------- Users ----------
+function addUser(){
+  const name=document.getElementById('u-name').value.trim();
+  const role=document.getElementById('u-role').value;
+  if(!name){ alert('Name is required.'); return; }
+  if(DATA.users.some(u=>u.name.toLowerCase()===name.toLowerCase())){ alert('That name is already in the roster.'); return; }
+  DATA.users.push({id:uid('usr'), name, role});
+  document.getElementById('u-name').value='';
+  renderUsersTable();
+  autoSaveAfterChange();
+}
+function deleteUser(id){
+  if(!confirm('Remove this team member from the roster?')) return;
+  DATA.users=DATA.users.filter(u=>u.id!==id);
+  renderUsersTable();
+  autoSaveAfterChange();
+}
+function renderUsersTable(){
+  const tbody=document.getElementById('u-tbody');
+  tbody.innerHTML=DATA.users.map(u=>`
+    <tr>
+      <td>${esc(u.name)}</td>
+      <td><span class="pill ${roleClass(u.role)}">${esc(u.role)}</span></td>
+      <td class="row-actions"><button class="btn" onclick="deleteUser('${u.id}')">Remove</button></td>
+    </tr>`).join('');
+  document.getElementById('u-empty').style.display = DATA.users.length? 'none':'block';
+}
+
 // ---------- CTL ----------
 function buildActionsGrid(){
   const grid=document.getElementById('c-actions-grid');
-  grid.innerHTML=COACHED_ACTIONS.map((a,i)=>`<label class="chk"><input type="checkbox" value="${a}"/> ${a}</label>`).join('');
+  grid.innerHTML=COACHED_ACTIONS.map((a)=>`<label class="chk"><input type="checkbox" value="${a}"/> ${a}</label>`).join('');
 }
 function submitCTL(){
   const agent=document.getElementById('c-agent').value.trim();
@@ -305,19 +539,18 @@ function submitCTL(){
     id:uid('ctl'), agent, audit, score: score===''? null : Number(score),
     coach, date, notes, actions, status:'Done', createdAt:new Date().toISOString()
   });
-  markUnsaved();
   document.getElementById('c-agent').value='';
   document.getElementById('c-audit').value='';
   document.getElementById('c-score').value='';
-  document.getElementById('c-coach').value='';
   document.getElementById('c-date').value='';
   document.getElementById('c-notes').value='';
   buildActionsGrid();
   renderCTLTable();
+  autoSaveAfterChange();
 }
 function deleteCTL(id){
   if(!confirm('Delete this coaching record?')) return;
-  DATA.ctl=DATA.ctl.filter(r=>r.id!==id); markUnsaved(); renderCTLTable();
+  DATA.ctl=DATA.ctl.filter(r=>r.id!==id); renderCTLTable(); autoSaveAfterChange();
 }
 function renderCTLTable(){
   const q=(document.getElementById('ctl-search').value||'').toLowerCase();
@@ -368,17 +601,16 @@ function submitDispute(){
     id:uid('disp'), agent, audit, score: score===''? null : Number(score),
     questions, reason, status:'Pending', resolutionNotes:'', submittedAt:new Date().toISOString()
   });
-  markUnsaved();
-  document.getElementById('d-agent').value='';
   document.getElementById('d-audit').value='';
   document.getElementById('d-score').value='';
   document.getElementById('d-questions').value='';
   document.getElementById('d-reason').value='';
   renderDisputesTable();
+  autoSaveAfterChange();
 }
 function deleteDispute(id){
   if(!confirm('Delete this dispute record?')) return;
-  DATA.disputes=DATA.disputes.filter(r=>r.id!==id); markUnsaved(); renderDisputesTable();
+  DATA.disputes=DATA.disputes.filter(r=>r.id!==id); renderDisputesTable(); autoSaveAfterChange();
 }
 let currentResolveId=null;
 function openResolve(id){
@@ -393,7 +625,8 @@ function saveResolution(){
   const r=DATA.disputes.find(x=>x.id===currentResolveId); if(!r) return;
   r.status=document.getElementById('rm-status').value;
   r.resolutionNotes=document.getElementById('rm-notes').value.trim();
-  markUnsaved(); closeOverlay('resolve-modal'); renderDisputesTable();
+  closeOverlay('resolve-modal'); renderDisputesTable();
+  autoSaveAfterChange();
 }
 function closeOverlay(id){ document.getElementById(id).classList.remove('on'); }
 
@@ -433,10 +666,8 @@ function updateDisputeKpis(){
   document.getElementById('k-d-invalid').textContent=DATA.disputes.filter(r=>r.status==='Invalid'||r.status==='Rejected').length;
 }
 
-// ---------- Excel Save / Open / Clear ----------
-function exportExcel(){
-  if(typeof XLSX==='undefined'){ alert('Excel library failed to load (no internet access on first load?). Please check your connection and reload the page.'); return; }
-
+// ---------- Workbook build / parse (shared by manual + auto-save + import) ----------
+function buildWorkbook(){
   const ctlRows=DATA.ctl.map(r=>({
     'Audit ID':r.audit,'Agent':r.agent,'Score (%)':r.score,'Coach/Supervisor':r.coach,
     'Coaching Date':r.date,'Coached Actions':(r.actions||[]).join('; '),'Session Notes':r.notes,
@@ -447,18 +678,112 @@ function exportExcel(){
     'Dispute Reason':r.reason,'Status':r.status,'Resolution Notes':r.resolutionNotes,
     'Record ID':r.id,'Submitted At':r.submittedAt
   }));
+  const userRows=DATA.users.map(u=>({'Name':u.name,'Role':u.role,'User ID':u.id}));
 
   const wb=XLSX.utils.book_new();
-  const wsCtl=XLSX.utils.json_to_sheet(ctlRows.length? ctlRows : [{}]);
-  const wsDisp=XLSX.utils.json_to_sheet(dispRows.length? dispRows : [{}]);
-  XLSX.utils.book_append_sheet(wb, wsCtl, 'Coaching (CTL)');
-  XLSX.utils.book_append_sheet(wb, wsDisp, 'Disputes');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ctlRows.length? ctlRows : [{}]), 'Coaching (CTL)');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dispRows.length? dispRows : [{}]), 'Disputes');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(userRows.length? userRows : [{}]), 'Users');
+  return wb;
+}
+function loadWorkbook(wb){
+  const ctlSheet=wb.Sheets['Coaching (CTL)'];
+  const dispSheet=wb.Sheets['Disputes'];
+  const userSheet=wb.Sheets['Users'];
+  const ctlRows=ctlSheet? XLSX.utils.sheet_to_json(ctlSheet) : [];
+  const dispRows=dispSheet? XLSX.utils.sheet_to_json(dispSheet) : [];
+  const userRows=userSheet? XLSX.utils.sheet_to_json(userSheet) : [];
 
-  const filename=currentFileName || ('qms-coaching-disputes-'+todayISO()+'.xlsx');
-  XLSX.writeFile(wb, filename);
-  markSaved(filename);
+  DATA.ctl=ctlRows.filter(r=>r['Audit ID']).map(r=>({
+    id:r['Record ID']||uid('ctl'), audit:r['Audit ID']||'', agent:r['Agent']||'',
+    score:r['Score (%)']===undefined||r['Score (%)']===''? null:Number(r['Score (%)']),
+    coach:r['Coach/Supervisor']||'', date:r['Coaching Date']||'',
+    actions:(r['Coached Actions']||'').toString().split(';').map(s=>s.trim()).filter(Boolean),
+    notes:r['Session Notes']||'', status:r['Status']||'Done', createdAt:r['Created At']||new Date().toISOString()
+  }));
+  DATA.disputes=dispRows.filter(r=>r['Audit ID']).map(r=>({
+    id:r['Record ID']||uid('disp'), audit:r['Audit ID']||'', agent:r['Agent']||'',
+    score:r['Original Score (%)']===undefined||r['Original Score (%)']===''? null:Number(r['Original Score (%)']),
+    questions:r['Disputed Questions/Criteria']||'', reason:r['Dispute Reason']||'',
+    status:r['Status']||'Pending', resolutionNotes:r['Resolution Notes']||'',
+    submittedAt:r['Submitted At']||new Date().toISOString()
+  }));
+  DATA.users=userRows.filter(r=>r['Name']).map(r=>({
+    id:r['User ID']||uid('usr'), name:r['Name']||'', role:r['Role']||'Agent'
+  }));
 }
 
+// ---------- Save status UI ----------
+function setStatus(html, kind){
+  const s=document.getElementById('file-status');
+  const colors={amber:['var(--amber-l)','var(--amber)'],green:['var(--green-l)','var(--green)'],red:['var(--red-l)','var(--red)']};
+  s.style.background=colors[kind][0]; s.style.color=colors[kind][1];
+  s.innerHTML=html;
+}
+function markSavedManual(name){
+  currentFileName=name;
+  setStatus('✓ Saved to <b>'+esc(name)+'</b>. Share this file with your team; re-open it here to keep adding records.','green');
+}
+function markSavedAuto(name){
+  currentFileName=name;
+  setStatus('🔗 Auto-saving to <b>'+esc(name)+'</b> — every submission writes to this file automatically.','green');
+}
+function markUnsavedFallback(){
+  setStatus('⚠ Unsaved changes — click <b>Save to Excel</b> to write them to a workbook, or connect a file for auto-save.','amber');
+}
+
+// ---------- Excel: connect (auto-save), manual save, manual open ----------
+async function connectExcelFile(){
+  if(!window.showSaveFilePicker){
+    alert('Auto-save needs a Chromium-based browser (Chrome or Edge). In this browser, please use "Save to Excel" and "Open" instead.');
+    return;
+  }
+  try{
+    const openExisting=confirm('Click OK to connect an EXISTING Excel file (its data will replace what is on screen). Click Cancel to create a NEW file to auto-save into.');
+    if(openExisting){
+      const [handle]=await window.showOpenFilePicker({types:[{description:'Excel Workbook',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]});
+      fileHandle=handle;
+      const file=await handle.getFile();
+      const buf=await file.arrayBuffer();
+      const wb=XLSX.read(new Uint8Array(buf), {type:'array'});
+      loadWorkbook(wb);
+      renderUsersTable(); renderCTLTable(); renderDisputesTable();
+    }else{
+      fileHandle=await window.showSaveFilePicker({
+        suggestedName:'qms-coaching-disputes-'+todayISO()+'.xlsx',
+        types:[{description:'Excel Workbook',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]
+      });
+    }
+    await writeToHandle();
+    markSavedAuto(fileHandle.name);
+  }catch(err){
+    if(err && err.name!=='AbortError') alert('Could not connect the file: '+err.message);
+  }
+}
+async function writeToHandle(){
+  if(!fileHandle) return false;
+  const wb=buildWorkbook();
+  const arrBuf=XLSX.write(wb,{bookType:'xlsx',type:'array'});
+  const writable=await fileHandle.createWritable();
+  await writable.write(arrBuf);
+  await writable.close();
+  return true;
+}
+async function autoSaveAfterChange(){
+  if(fileHandle){
+    try{ await writeToHandle(); markSavedAuto(fileHandle.name); }
+    catch(err){ markUnsavedFallback(); }
+  }else{
+    markUnsavedFallback();
+  }
+}
+function exportExcel(){
+  if(typeof XLSX==='undefined'){ alert('Excel library failed to load (no internet access on first load?). Please check your connection and reload the page.'); return; }
+  const wb=buildWorkbook();
+  const filename=currentFileName || ('qms-coaching-disputes-'+todayISO()+'.xlsx');
+  XLSX.writeFile(wb, filename);
+  markSavedManual(filename);
+}
 function importExcel(evt){
   const file=evt.target.files[0]; if(!file) return;
   if(typeof XLSX==='undefined'){ alert('Excel library failed to load (no internet access on first load?). Please check your connection and reload the page.'); return; }
@@ -466,47 +791,24 @@ function importExcel(evt){
   reader.onload=function(e){
     try{
       const wb=XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-      const ctlSheet=wb.Sheets['Coaching (CTL)'];
-      const dispSheet=wb.Sheets['Disputes'];
-      const ctlRows=ctlSheet? XLSX.utils.sheet_to_json(ctlSheet) : [];
-      const dispRows=dispSheet? XLSX.utils.sheet_to_json(dispSheet) : [];
-
-      DATA.ctl=ctlRows.filter(r=>r['Audit ID']).map(r=>({
-        id:r['Record ID']||uid('ctl'), audit:r['Audit ID']||'', agent:r['Agent']||'',
-        score:r['Score (%)']===undefined||r['Score (%)']===''? null:Number(r['Score (%)']),
-        coach:r['Coach/Supervisor']||'', date:r['Coaching Date']||'',
-        actions:(r['Coached Actions']||'').toString().split(';').map(s=>s.trim()).filter(Boolean),
-        notes:r['Session Notes']||'', status:r['Status']||'Done', createdAt:r['Created At']||new Date().toISOString()
-      }));
-      DATA.disputes=dispRows.filter(r=>r['Audit ID']).map(r=>({
-        id:r['Record ID']||uid('disp'), audit:r['Audit ID']||'', agent:r['Agent']||'',
-        score:r['Original Score (%)']===undefined||r['Original Score (%)']===''? null:Number(r['Original Score (%)']),
-        questions:r['Disputed Questions/Criteria']||'', reason:r['Dispute Reason']||'',
-        status:r['Status']||'Pending', resolutionNotes:r['Resolution Notes']||'',
-        submittedAt:r['Submitted At']||new Date().toISOString()
-      }));
-
-      renderCTLTable(); renderDisputesTable();
-      markSaved(file.name);
-      alert('Loaded '+DATA.ctl.length+' coaching record(s) and '+DATA.disputes.length+' dispute record(s) from '+file.name+'.');
-    }catch(err){ alert('Could not read this file — make sure it is an .xlsx workbook saved by this tool (or with matching "Coaching (CTL)" / "Disputes" sheet names).'); }
+      loadWorkbook(wb);
+      fileHandle=null; // plain <input type=file> gives no writable handle
+      renderUsersTable(); renderCTLTable(); renderDisputesTable();
+      markSavedManual(file.name);
+      renderRoster();
+      if(document.getElementById('signin-screen').classList.contains('show')){
+        alert('Loaded '+DATA.users.length+' team member(s), '+DATA.ctl.length+' coaching record(s), and '+DATA.disputes.length+' dispute record(s). Pick your name to sign in.');
+      }
+    }catch(err){ alert('Could not read this file — make sure it is an .xlsx workbook saved by this tool.'); }
     evt.target.value='';
   };
   reader.readAsArrayBuffer(file);
 }
-function clearAll(){
-  DATA={ctl:[],disputes:[]}; currentFileName=null; renderCTLTable(); renderDisputesTable();
-  const s=document.getElementById('file-status');
-  s.style.background='var(--amber-l)'; s.style.color='var(--amber)';
-  s.innerHTML='⚠ No Excel file loaded yet — working in an unsaved session. Click <b>Save to Excel</b> to download a workbook, or <b>Open Excel file</b> to continue an existing one.';
-}
-function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 // ---------- Init ----------
 document.getElementById('c-date').value=todayISO();
 buildActionsGrid();
-renderCTLTable();
-renderDisputesTable();
+showRoster();
 </script>
 </body>
 </html>
