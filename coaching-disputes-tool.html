@@ -104,6 +104,8 @@ tr:last-child td{border-bottom:none}
 .p-rejected{background:var(--red-l);color:var(--red)}
 .role-admin{background:var(--purple-l);color:var(--purple)}
 .role-supervisor{background:var(--blue-light);color:var(--blue)}
+.role-qa{background:var(--amber-l);color:var(--amber)}
+.role-area-manager{background:#E6F7F1;color:#0F7A5C}
 .role-agent{background:var(--green-l);color:var(--green)}
 .row-actions{display:flex;gap:6px}
 .row-actions button{padding:5px 9px;font-size:11.5px}
@@ -141,26 +143,18 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
     <!-- Existing roster (loaded from the Excel workbook's Users sheet) -->
     <div id="signin-roster-wrap">
       <div class="signin-roster" id="signin-roster"></div>
-      <div class="signin-link" style="margin-bottom:1rem"><a onclick="showAddUserForm()">+ Add a new team member</a></div>
+      <div class="signin-link" style="margin-bottom:1rem" id="signin-admin-setup-link"><a onclick="showAddUserForm()">⚙ Set up the Admin account (first-time setup)</a></div>
       <div class="signin-link"><a onclick="document.getElementById('signin-import-file').click()">📂 Open an existing Excel file first</a></div>
       <input type="file" id="signin-import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
     </div>
 
-    <!-- Add / sign in as new user -->
+    <!-- First-time Admin bootstrap only — everyone else is added by the Admin from User Management -->
     <div id="signin-new-wrap" style="display:none">
       <div class="signin-field">
-        <label>Your full name</label>
+        <label>Admin full name</label>
         <input type="text" id="signin-name" placeholder="e.g. Sara Mitchell" onkeydown="if(event.key==='Enter') doSignIn()"/>
       </div>
-      <div class="signin-field">
-        <label>Your role</label>
-        <select id="signin-role">
-          <option value="Agent">Agent</option>
-          <option value="Supervisor">Supervisor / QA</option>
-          <option value="Admin">Admin</option>
-        </select>
-      </div>
-      <button class="signin-btn" onclick="doSignIn()">Sign in</button>
+      <button class="signin-btn" onclick="doSignIn()">Create Admin &amp; sign in</button>
       <div class="signin-link" id="signin-back-link" style="display:none"><a onclick="showRoster()">&larr; Back to team list</a></div>
     </div>
   </div>
@@ -196,7 +190,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 <div class="tabs">
   <div class="tab on" data-tab="coaching" onclick="showTab('coaching')">Coaching (CTL)</div>
   <div class="tab" data-tab="disputes" onclick="showTab('disputes')">Disputes</div>
-  <div class="tab" data-tab="users" onclick="showTab('users')">User Management</div>
+  <div class="tab" data-tab="users" id="tab-users" onclick="showTab('users')" style="display:none">User Management</div>
   <div class="tab" data-tab="help" onclick="showTab('help')">How this works</div>
 </div>
 
@@ -311,20 +305,25 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
 
   <!-- ============ USERS PANEL ============ -->
   <div class="panel" id="panel-users">
-    <div class="storage-note">The team roster below travels inside the Excel workbook (a <b>Users</b> sheet) so it's shared the same way as the coaching/dispute records — still no separate account system or cloud database.</div>
-    <div class="card">
+    <div class="storage-note">Only the <b>Admin</b> can add or remove team members. The roster travels inside the Excel workbook (a <b>Users</b> sheet) so it's shared the same way as the coaching/dispute records — still no separate account system or cloud database.</div>
+    <div class="card" id="u-add-card">
       <h2>Add a team member</h2>
       <div class="grid3">
         <div class="field"><label>Full name</label><input type="text" id="u-name" placeholder="e.g. Tom Fischer"/></div>
         <div class="field"><label>Role</label>
           <select id="u-role">
             <option value="Agent">Agent</option>
-            <option value="Supervisor">Supervisor / QA</option>
+            <option value="QA">QA</option>
+            <option value="Supervisor">Supervisor</option>
+            <option value="Area Manager">Area Manager</option>
             <option value="Admin">Admin</option>
           </select>
         </div>
         <div class="field" style="display:flex;align-items:flex-end"><button class="btn-p" style="width:100%" onclick="addUser()">Add user</button></div>
       </div>
+    </div>
+    <div class="card" id="u-locked-card" style="display:none">
+      <div class="info" style="margin-top:0;background:var(--amber-l);color:var(--amber)">🔒 Only an Admin can add or remove team members. Ask your Admin to sign in and manage the roster here.</div>
     </div>
     <div class="card">
       <h2>Team roster</h2>
@@ -358,6 +357,12 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
         <li>The workbook has three sheets: <b>Coaching (CTL)</b>, <b>Disputes</b>, and <b>Users</b> — put it on your normal shared drive / email / Teams / SharePoint.</li>
         <li>Whoever needs to add or update records clicks <b>Open</b>, picks that same workbook, signs in from the roster, and their entries save back into it.</li>
         <li>The workbook can also be opened directly in Excel/Google Sheets/Numbers for reporting, filtering, or pivot tables.</li>
+      </ul>
+      <h2 style="margin-top:16px">Roles &amp; who can add users</h2>
+      <ul style="font-size:13px;color:var(--text2);line-height:1.8">
+        <li>Roles: <b>Agent</b>, <b>QA</b>, <b>Supervisor</b>, <b>Area Manager</b>, <b>Admin</b>.</li>
+        <li>The very first person opens the app, clicks <b>⚙ Set up the Admin account</b>, and enters their name — this creates the one Admin. That link disappears once an Admin exists.</li>
+        <li>From then on, <b>only the Admin</b> can add or remove team members, from the <b>User Management</b> tab (visible only to the Admin). Everyone else just picks their name from the roster to sign in.</li>
       </ul>
       <h2 style="margin-top:16px">Sign-in &amp; data location</h2>
       <p style="font-size:13px;color:var(--text2)">Sign-in is name-based (no password) purely to auto-fill and log who did what — it is not an authentication system. Nothing is written to browser storage; the current user is held only in this tab's memory and is cleared on Logout or when the tab closes. The <b>.xlsx file is the single source of truth</b>.</p>
@@ -405,13 +410,15 @@ function uid(prefix){ return prefix+'-'+Date.now().toString(36)+Math.random().to
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function esc(s){ return String(s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function initials(name){ return (name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
-function roleClass(role){ return {Admin:'role-admin',Supervisor:'role-supervisor',Agent:'role-agent'}[role]||'role-agent'; }
+function roleClass(role){ return {Admin:'role-admin',Supervisor:'role-supervisor',QA:'role-qa','Area Manager':'role-area-manager',Agent:'role-agent'}[role]||'role-agent'; }
+function isAdmin(){ return !!currentUser && currentUser.role==='Admin'; }
+function hasAdmin(){ return DATA.users.some(u=>u.role==='Admin'); }
 
 // ---------- Sign-in ----------
 function renderRoster(){
   const wrap=document.getElementById('signin-roster');
   if(!DATA.users.length){
-    wrap.innerHTML='<div class="signin-empty">No team members yet. Add yourself to get started, or open an existing workbook.</div>';
+    wrap.innerHTML='<div class="signin-empty">No team members yet. Set up the Admin account below, or open an existing workbook.</div>';
   }else{
     wrap.innerHTML=DATA.users.map(u=>`
       <div class="signin-roster-row" onclick="signInAsUser('${u.id}')">
@@ -419,6 +426,8 @@ function renderRoster(){
         <span class="pill ${roleClass(u.role)}">${esc(u.role)}</span>
       </div>`).join('');
   }
+  // Self-service sign-up is disabled once an Admin exists — only the Admin adds people from User Management.
+  document.getElementById('signin-admin-setup-link').style.display = hasAdmin()? 'none':'block';
 }
 function showRoster(){
   renderRoster();
@@ -428,11 +437,12 @@ function showRoster(){
   document.getElementById('signin-sub').textContent='Sign in with your name so your coaching sessions and disputes are logged automatically.';
 }
 function showAddUserForm(){
+  if(hasAdmin()){ alert('An Admin account already exists. Ask your Admin to sign in and add you from User Management.'); return; }
   document.getElementById('signin-roster-wrap').style.display='none';
   document.getElementById('signin-new-wrap').style.display='block';
   document.getElementById('signin-back-link').style.display= DATA.users.length? 'block':'none';
-  document.getElementById('signin-title').textContent='Add yourself';
-  document.getElementById('signin-sub').textContent='This adds you to the shared team roster and signs you in.';
+  document.getElementById('signin-title').textContent='Set up Admin account';
+  document.getElementById('signin-sub').textContent='This creates the one Admin account for this workbook. The Admin then adds every other team member from User Management.';
   document.getElementById('signin-name').value='';
   document.getElementById('signin-error').classList.remove('show');
   document.getElementById('signin-name').focus();
@@ -443,15 +453,15 @@ function signInAsUser(id){
   enterApp();
 }
 function doSignIn(){
+  if(hasAdmin()){ showRoster(); return; } // safety net: bootstrap form should not be reachable once an Admin exists
   const name=document.getElementById('signin-name').value.trim();
-  const role=document.getElementById('signin-role').value;
   const errEl=document.getElementById('signin-error');
-  if(!name){ errEl.textContent='Please enter your name.'; errEl.classList.add('show'); return; }
+  if(!name){ errEl.textContent='Please enter a name.'; errEl.classList.add('show'); return; }
   errEl.classList.remove('show');
 
   let u=DATA.users.find(x=>x.name.toLowerCase()===name.toLowerCase());
   if(!u){
-    u={id:uid('usr'), name, role};
+    u={id:uid('usr'), name, role:'Admin'};
     DATA.users.push(u);
     autoSaveAfterChange();
   }
@@ -464,6 +474,9 @@ function enterApp(){
   document.getElementById('hdr-uav').textContent=initials(currentUser.name);
   document.getElementById('hdr-uname').textContent=currentUser.name;
   document.getElementById('hdr-urole').textContent=currentUser.role;
+  document.getElementById('tab-users').style.display = isAdmin()? '' : 'none';
+  document.getElementById('u-add-card').style.display = isAdmin()? '' : 'none';
+  document.getElementById('u-locked-card').style.display = isAdmin()? 'none' : '';
   prefillFromUser();
   renderUsersTable();
   renderCTLTable();
@@ -486,13 +499,15 @@ function prefillFromUser(){
 
 // ---------- Tabs ----------
 function showTab(name){
+  if(name==='users' && !isAdmin()) return;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on', t.dataset.tab===name));
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
   document.getElementById('panel-'+name).classList.add('on');
 }
 
-// ---------- Users ----------
+// ---------- Users (Admin only) ----------
 function addUser(){
+  if(!isAdmin()){ alert('Only the Admin can add team members.'); return; }
   const name=document.getElementById('u-name').value.trim();
   const role=document.getElementById('u-role').value;
   if(!name){ alert('Name is required.'); return; }
@@ -503,6 +518,8 @@ function addUser(){
   autoSaveAfterChange();
 }
 function deleteUser(id){
+  if(!isAdmin()){ alert('Only the Admin can remove team members.'); return; }
+  if(id===currentUser.id){ alert('You cannot remove your own signed-in Admin account.'); return; }
   if(!confirm('Remove this team member from the roster?')) return;
   DATA.users=DATA.users.filter(u=>u.id!==id);
   renderUsersTable();
@@ -514,7 +531,7 @@ function renderUsersTable(){
     <tr>
       <td>${esc(u.name)}</td>
       <td><span class="pill ${roleClass(u.role)}">${esc(u.role)}</span></td>
-      <td class="row-actions"><button class="btn" onclick="deleteUser('${u.id}')">Remove</button></td>
+      <td class="row-actions">${isAdmin()? `<button class="btn" onclick="deleteUser('${u.id}')">Remove</button>` : ''}</td>
     </tr>`).join('');
   document.getElementById('u-empty').style.display = DATA.users.length? 'none':'block';
 }
