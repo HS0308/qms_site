@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Document Control Queue</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Calibri,'Segoe UI',sans-serif}
+:root{
+  --sidebar:#001B6C;--sidebar2:#001055;--sidebar-t:rgba(255,255,255,.72);
+  --bg:#F4F6FA;--surface:#FFFFFF;--surface2:#F0F3F9;
+  --blue:#001B6C;--blue-light:#E6EAF5;
+  --green:#2DC48D;--green-l:#E8F9F3;
+  --red:#C0392B;--red-l:#FCEAE8;
+  --amber:#F5A623;--amber-l:#FEF6E8;
+  --bdr:#E2E8F0;--bdr2:#EDF1F7;
+  --text:#1A202C;--text2:#4A5568;--text3:#A0AEC0;
+  --r:8px;--rl:12px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text)}
+button{cursor:pointer;font-family:inherit}
+input,select,textarea{font-family:inherit}
+[hidden]{display:none!important}
+
+/* ---------- LOGIN ---------- */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--sidebar),var(--sidebar2))}
+.login-card{background:var(--surface);border-radius:var(--rl);padding:2.2rem 2.4rem;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login-card h1{font-size:19px;color:var(--blue);margin-bottom:2px}
+.login-card p.sub{font-size:12px;color:var(--text3);margin-bottom:1.2rem}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px}
+.field select,.field input{width:100%;padding:9px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:13px;background:var(--surface2)}
+.btn{padding:10px 16px;border-radius:var(--r);border:none;font-weight:700;font-size:13px}
+.btn-primary{background:var(--blue);color:#fff;width:100%;margin-top:6px}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-outline{background:transparent;border:1px solid var(--bdr);color:var(--text2)}
+.btn-red{background:var(--red);color:#fff}
+.btn-green{background:var(--green);color:#fff}
+.link-txt{color:var(--blue);font-size:11.5px;text-decoration:none;font-weight:700;cursor:pointer}
+.workbook-status{font-size:11px;padding:8px 10px;border-radius:var(--r);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.wb-ok{background:var(--green-l);color:#1a8f68}
+.wb-warn{background:var(--amber-l);color:#a56606}
+.wb-off{background:var(--red-l);color:var(--red)}
+
+/* ---------- APP LAYOUT ---------- */
+.app{display:none;height:100vh;overflow:hidden}
+.app.active{display:flex}
+.sb{width:220px;flex-shrink:0;background:var(--sidebar);display:flex;flex-direction:column;height:100vh;overflow-y:auto}
+.sb-logo{padding:1rem 1.25rem .9rem;border-bottom:1px solid rgba(255,255,255,.12)}
+.sb-logo .t1{color:#fff;font-weight:800;font-size:14px}
+.sb-logo .t2{color:var(--sidebar-t);font-size:10px}
+.sb-user{padding:.8rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-user .nm{color:#fff;font-size:12.5px;font-weight:700}
+.sb-user .rl{color:var(--sidebar-t);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.sb-nav{flex:1;padding:.6rem}
+.sb-lbl{font-size:9px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.08em;padding:10px 10px 4px;font-weight:700}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:8px;color:var(--sidebar-t);font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:2px}
+.ni:hover{background:rgba(255,255,255,.08);color:#fff}
+.ni.active{background:rgba(255,255,255,.16);color:#fff}
+.ni .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px}
+.sb-foot{padding:.8rem;border-top:1px solid rgba(255,255,255,.1)}
+.sb-btn{width:100%;padding:9px;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;border:none;font-size:12px;font-weight:700}
+.sb-btn:hover{background:rgba(255,255,255,.16)}
+
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--bdr);padding:12px 22px;display:flex;align-items:center;justify-content:space-between}
+.topbar h2{font-size:16px}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+
+.card{background:var(--surface);border-radius:var(--rl);border:1px solid var(--bdr2);padding:16px;margin-bottom:16px}
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border-radius:var(--rl);border:1px solid var(--bdr2);padding:14px}
+.kpi .v{font-size:22px;font-weight:800;color:var(--blue)}
+.kpi .l{font-size:11px;color:var(--text2);margin-top:2px}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;padding:9px 10px;background:var(--surface2);color:var(--text2);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid var(--bdr)}
+td{padding:9px 10px;border-bottom:1px solid var(--bdr2)}
+tr:hover td{background:#FAFBFE}
+.pill{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;display:inline-block}
+.pill-pending{background:var(--amber-l);color:#a56606}
+.pill-progress{background:var(--blue-light);color:var(--blue)}
+.pill-approved{background:var(--green-l);color:#1a8f68}
+.pill-rejected{background:var(--red-l);color:var(--red)}
+
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--bdr);border-radius:var(--r);font-size:12px}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:#fff;border-radius:var(--rl);padding:20px;width:460px;max-width:92vw;max-height:88vh;overflow-y:auto}
+.modal h3{margin-bottom:12px;font-size:15px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:10px 16px;border-radius:8px;font-size:12.5px;z-index:200;opacity:0;transform:translateY(10px);transition:.25s}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.ok{background:#1a8f68}
+.toast.err{background:var(--red)}
+
+.autosave-dot{width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block;margin-right:5px}
+.autosave-dot.saving{background:var(--amber);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.empty{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+.small{font-size:11px;color:var(--text3)}
+.badge-role{font-size:9px;padding:2px 6px;border-radius:5px;background:var(--blue-light);color:var(--blue);font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Document Control Queue</h1>
+    <p class="sub">Sign in to review activation submissions</p>
+
+    <div id="wb-status" class="workbook-status wb-off">⚠ No workbook connected yet</div>
+
+    <div id="connect-block">
+      <button class="btn btn-outline" style="width:100%" onclick="connectWorkbook()">📎 Connect Excel workbook</button>
+      <p class="small" style="margin-top:6px">Pick the shared <b>Document_Control_Queue.xlsx</b> from your team drive. All sign-ins and reviews auto-save back into this file.</p>
+      <p class="small" id="fs-warning" hidden style="margin-top:6px;color:#a56606">Your browser doesn't support live auto-save (File System Access API). Use Chrome or Edge for full auto-save, or use manual Import/Export below.</p>
+      <div id="manual-fallback" hidden style="margin-top:10px;display:flex;gap:8px">
+        <label class="btn btn-outline" style="flex:1;text-align:center">Import<input type="file" id="manual-import" accept=".xlsx" style="display:none" onchange="manualImport(this)"/></label>
+      </div>
+    </div>
+
+    <div id="login-block" hidden style="margin-top:14px">
+      <div class="field">
+        <label>User</label>
+        <select id="login-user"></select>
+      </div>
+      <div class="field">
+        <label>PIN</label>
+        <input type="password" id="login-pin" maxlength="8" placeholder="4-digit PIN"/>
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+      <p class="small" style="margin-top:8px;text-align:center">Default PIN is the last 4 digits of your phone number.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app" id="app">
+  <div class="sb">
+    <div class="sb-logo"><div class="t1">Document Control</div><div class="t2">Queue Management</div></div>
+    <div class="sb-user">
+      <div class="nm" id="sb-user-name">—</div>
+      <div class="rl" id="sb-user-role">—</div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-lbl">Workspace</div>
+      <div class="ni active" data-page="myqueue" onclick="nav('myqueue')">🗂 My Queue<span class="badge" id="nav-badge-mine" hidden>0</span></div>
+      <div class="ni" data-page="allqueue" onclick="nav('allqueue')">📋 All Submissions</div>
+      <div class="ni" data-page="search" onclick="nav('search')">🔎 Search &amp; Edit</div>
+      <div class="ni" data-page="reports" onclick="nav('reports')">📊 Reports</div>
+      <div class="sb-lbl" id="admin-lbl" hidden>Admin</div>
+      <div class="ni" id="nav-users" data-page="users" onclick="nav('users')" hidden>👥 User Management</div>
+      <div class="ni" id="nav-signlog" data-page="signlog" onclick="nav('signlog')" hidden>🕓 Sign-in Log</div>
+    </div>
+    <div class="sb-foot">
+      <div style="color:var(--sidebar-t);font-size:10.5px;margin-bottom:8px"><span class="autosave-dot" id="autosave-dot"></span><span id="autosave-txt">Saved</span></div>
+      <button class="sb-btn" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h2 id="page-title">My Queue</h2>
+      <div class="small" id="wb-filename">—</div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================================
+   DOCUMENT CONTROL QUEUE
+   Single-file tool. Source of truth = a connected .xlsx workbook.
+   Uses the File System Access API (Chrome/Edge) to read+write the SAME
+   physical file the team already shares on a drive — every sign-in,
+   sign-out, claim and review decision is written straight back into it.
+   Firefox/Safari fall back to manual Import / Export.
+   ========================================================================= */
+
+const SHEETS = {
+  DATA: 'Data', REVIEWERS: 'Reviewers', ALLOCATION: 'Allocation',
+  USERS: 'DCQ_Users', SIGNLOG: 'DCQ_SignLog'
+};
+
+let fileHandle = null;     // FileSystemFileHandle, if supported+picked
+let workbook   = null;     // SheetJS workbook object (in-memory truth)
+let currentUser= null;     // {name,email,phone,area,role}
+let saveTimer  = null;
+
+/* ---------- IndexedDB: remember the file handle across reloads ---------- */
+function idbOpen(){return new Promise((res,rej)=>{const r=indexedDB.open('dcq-store',1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function idbSet(k,v){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error)})}
+async function idbGet(k){const db=await idbOpen();return new Promise((res,rej)=>{const tx=db.transaction('kv','readonly');const rq=tx.objectStore('kv').get(k);rq.onsuccess=()=>res(rq.result);rq.onerror=()=>rej(rq.error)})}
+
+const hasFSAccess = 'showOpenFilePicker' in window;
+
+window.addEventListener('DOMContentLoaded', async ()=>{
+  if(!hasFSAccess){
+    document.getElementById('fs-warning').hidden=false;
+    document.getElementById('manual-fallback').hidden=false;
+  }
+  // try to resume a previously-connected file
+  if(hasFSAccess){
+    try{
+      const h = await idbGet('fileHandle');
+      if(h){
+        const perm = await h.queryPermission({mode:'readwrite'});
+        if(perm==='granted'){ fileHandle=h; await loadWorkbookFromHandle(); }
+        else { setWbStatus('warn','Workbook was connected before — click Connect to re-grant access'); }
+      }
+    }catch(e){/* ignore */}
+  }
+});
+
+function setWbStatus(kind,msg){
+  const el=document.getElementById('wb-status');
+  el.className='workbook-status wb-'+(kind==='ok'?'ok':kind==='warn'?'warn':'off');
+  el.textContent=(kind==='ok'?'✓ ':kind==='warn'?'⚠ ':'⚠ ')+msg;
+}
+
+async function connectWorkbook(){
+  if(hasFSAccess){
+    try{
+      const [h] = await window.showOpenFilePicker({types:[{description:'Excel Workbook',accept:{'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':['.xlsx']}}]});
+      const perm = await h.requestPermission({mode:'readwrite'});
+      if(perm!=='granted'){ toast('Permission denied — cannot auto-save','err'); return; }
+      fileHandle = h;
+      await idbSet('fileHandle', h);
+      await loadWorkbookFromHandle();
+    }catch(e){ if(e.name!=='AbortError') toast('Could not open file: '+e.message,'err'); }
+  } else {
+    document.getElementById('manual-import').click();
+  }
+}
+
+function manualImport(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=(e)=>{
+    workbook = XLSX.read(e.target.result, {type:'array', cellDates:true});
+    document.getElementById('wb-filename').textContent = file.name+' (manual mode — remember to Export after changes)';
+    afterWorkbookLoaded();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function loadWorkbookFromHandle(){
+  const file = await fileHandle.getFile();
+  const buf  = await file.arrayBuffer();
+  workbook   = XLSX.read(buf, {type:'array', cellDates:true});
+  document.getElementById('wb-filename').textContent = file.name+' • auto-save on';
+  setWbStatus('ok','Connected: '+file.name);
+  afterWorkbookLoaded();
+}
+
+function afterWorkbookLoaded(){
+  ensureAppSheets();
+  document.getElementById('connect-block').hidden=true;
+  document.getElementById('login-block').hidden=false;
+  populateLoginUsers();
+}
+
+/* ---------- Ensure our own bookkeeping sheets exist in the workbook ---------- */
+function sheetToRows(name){
+  if(!workbook.SheetNames.includes(name)) return [];
+  return XLSX.utils.sheet_to_json(workbook.Sheets[name], {defval:''});
+}
+function rowsToSheet(name, rows, headerOrder){
+  const ws = XLSX.utils.json_to_sheet(rows, {header:headerOrder});
+  if(workbook.SheetNames.includes(name)) workbook.Sheets[name]=ws;
+  else XLSX.utils.book_append_sheet(workbook, ws, name);
+}
+
+function ensureAppSheets(){
+  // Users sheet: seed from Reviewers if not present
+  if(!workbook.SheetNames.includes(SHEETS.USERS)){
+    const reviewers = sheetToRows(SHEETS.REVIEWERS).filter(r=>r['Reviewer Name']);
+    const users = reviewers.map(r=>({
+      Name:r['Reviewer Name'], Email:r['Email']||'', Phone:String(r['PHN']||''),
+      NameAr:r['اسم المراجع']||'', Area:r['Area']||'',
+      PIN: String(r['PHN']||'0000').slice(-4) || '0000',
+      Role:'Reviewer', Active:'Yes'
+    }));
+    users.push({Name:'Admin',Email:'admin@local',Phone:'',NameAr:'',Area:'',PIN:'0000',Role:'Admin',Active:'Yes'});
+    rowsToSheet(SHEETS.USERS, users, ['Name','Email','Phone','NameAr','Area','PIN','Role','Active']);
+  }
+  if(!workbook.SheetNames.includes(SHEETS.SIGNLOG)){
+    rowsToSheet(SHEETS.SIGNLOG, [], ['Timestamp','User','Action']);
+  }
+  // Extend Data sheet with queue-management columns if missing
+  const dataRows = sheetToRows(SHEETS.DATA);
+  const extraCols = ['Review Code','Queue Status','Claimed By','Claimed At','Decision','Non-Compliant Reason','Reviewer Comment','Second Review','Reviewed By','Reviewed At','Last Edited By','Last Edited At'];
+  let changed=false;
+  dataRows.forEach(r=>{ extraCols.forEach(c=>{ if(!(c in r)){ r[c]=''; changed=true; } }); });
+  // stable, human-searchable review code per row — assigned once, never reused
+  dataRows.forEach((r,i)=>{ if(!r['Review Code']){ r['Review Code']='DCQ-'+String(i+1).padStart(5,'0'); changed=true; } });
+  if(changed || dataRows.length){
+    const firstRowHeaders = dataRows.length ? Object.keys(dataRows[0]) : extraCols;
+    rowsToSheet(SHEETS.DATA, dataRows, firstRowHeaders);
+  }
+}
+
+/* ---------- Assignment logic: branch -> area -> review group ---------- */
+function buildLookups(){
+  const allocation = sheetToRows(SHEETS.ALLOCATION); // Branch Name -> Governorate
+  const branchToGov = {};
+  allocation.forEach(r=>{ if(r['Branch Name']) branchToGov[String(r['Branch Name']).trim()] = r['Governorate']; });
+
+  const reviewersRaw = sheetToRows(SHEETS.REVIEWERS);
+  const govToGroup = {};
+  reviewersRaw.forEach(r=>{ if(r['branch_area']) govToGroup[String(r['branch_area']).trim()] = r['Review Area Group']; });
+
+  const users = sheetToRows(SHEETS.USERS).filter(u=>u.Active!=='No');
+  return {branchToGov, govToGroup, users};
+}
+
+function enrichRow(row, lut){
+  const branch = String(row['activation_branch_name']||'').trim();
+  const gov = lut.branchToGov[branch] || row['branch_area'] || '';
+  const group = lut.govToGroup[String(gov).trim()] || '';
+  return {gov, group};
+}
+
+/* ---------- Auto-save ---------- */
+function scheduleSave(){
+  document.getElementById('autosave-dot')?.classList.add('saving');
+  document.getElementById('autosave-txt') && (document.getElementById('autosave-txt').textContent='Saving…');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(doSave, 400);
+}
+async function doSave(){
+  try{
+    const out = XLSX.write(workbook, {bookType:'xlsx', type:'array'});
+    if(fileHandle){
+      const writable = await fileHandle.createWritable();
+      await writable.write(out);
+      await writable.close();
+      document.getElementById('autosave-txt') && (document.getElementById('autosave-txt').textContent='Saved to workbook');
+    } else {
+      document.getElementById('autosave-txt') && (document.getElementById('autosave-txt').textContent='Unsaved — use Export');
+    }
+  }catch(e){
+    toast('Auto-save failed: '+e.message,'err');
+    document.getElementById('autosave-txt') && (document.getElementById('autosave-txt').textContent='Save failed');
+  }finally{
+    document.getElementById('autosave-dot')?.classList.remove('saving');
+  }
+}
+function manualExport(){
+  const out = XLSX.write(workbook, {bookType:'xlsx', type:'array'});
+  const blob = new Blob([out], {type:'application/octet-stream'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='Document_Control_Queue.xlsx'; a.click();
+}
+
+/* ---------- Login ---------- */
+function populateLoginUsers(){
+  const users = sheetToRows(SHEETS.USERS).filter(u=>u.Active!=='No');
+  const sel = document.getElementById('login-user');
+  sel.innerHTML = users.map(u=>`<option value="${u.Name}">${u.Name} — ${u.Role}</option>`).join('');
+}
+
+function doLogin(){
+  const name = document.getElementById('login-user').value;
+  const pin  = document.getElementById('login-pin').value.trim();
+  const users = sheetToRows(SHEETS.USERS);
+  const u = users.find(x=>x.Name===name);
+  if(!u){ toast('User not found','err'); return; }
+  if(String(u.PIN||'0000')!==pin){ toast('Incorrect PIN','err'); return; }
+  currentUser = u;
+  logSignEvent(u.Name, 'Sign In');
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('sb-user-name').textContent=u.Name;
+  document.getElementById('sb-user-role').textContent=u.Role;
+  const isAdmin = u.Role==='Admin';
+  document.getElementById('admin-lbl').hidden=!isAdmin;
+  document.getElementById('nav-users').hidden=!isAdmin;
+  document.getElementById('nav-signlog').hidden=!isAdmin;
+  nav('myqueue');
+}
+
+function doLogout(){
+  logSignEvent(currentUser.Name, 'Sign Out');
+  currentUser=null;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pin').value='';
+}
+
+function logSignEvent(user, action){
+  const rows = sheetToRows(SHEETS.SIGNLOG);
+  rows.push({Timestamp:new Date().toLocaleString(), User:user, Action:action});
+  rowsToSheet(SHEETS.SIGNLOG, rows, ['Timestamp','User','Action']);
+  scheduleSave();
+}
+
+/* ---------- Navigation ---------- */
+function nav(page){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
+  const titles={myqueue:'My Queue', allqueue:'All Submissions', search:'Search & Edit', reports:'Reports', users:'User Management', signlog:'Sign-in Log'};
+  document.getElementById('page-title').textContent = titles[page];
+  const c = document.getElementById('content');
+  if(page==='myqueue') c.innerHTML = renderMyQueue();
+  if(page==='allqueue') c.innerHTML = renderAllQueue();
+  if(page==='search') c.innerHTML = renderSearchEdit();
+  if(page==='reports') c.innerHTML = renderReports();
+  if(page==='users') c.innerHTML = renderUsers();
+  if(page==='signlog') c.innerHTML = renderSignLog();
+  updateBadge();
+}
+
+function updateBadge(){
+  const lut = buildLookups();
+  const rows = sheetToRows(SHEETS.DATA);
+  const mine = rows.filter(r=>{
+    const {group}=enrichRow(r,lut);
+    return group===currentUser.Area && (r['Queue Status']||'')!=='Done' && (r['Claimed By']||'')===''
+  });
+  const badge=document.getElementById('nav-badge-mine');
+  if(mine.length){badge.hidden=false;badge.textContent=mine.length;} else badge.hidden=true;
+}
+
+/* ---------- My Queue ---------- */
+function renderMyQueue(){
+  const lut = buildLookups();
+  const rows = sheetToRows(SHEETS.DATA);
+  const myRows = rows.map((r,i)=>({r,i,...enrichRow(r,lut)}))
+    .filter(x=> x.group===currentUser.Area
+             && (x.r['Queue Status']||'')!=='Done'
+             && ( (x.r['Claimed By']||'')==='' || x.r['Claimed By']===currentUser.Name ));
+
+  if(!myRows.length) return `<div class="card"><div class="empty">Your queue is empty 🎉<br><span class="small">Nothing assigned to your area (${currentUser.Area||'—'}) right now.</span></div></div>`;
+
+  return `<div class="card">
+    <table><thead><tr><th>Code</th><th>Customer</th><th>National ID</th><th>Phone</th><th>Branch</th><th>Status</th><th></th></tr></thead>
+    <tbody>${myRows.map(x=>{
+      const r=x.r, claimed = r['Claimed By']===currentUser.Name;
+      const status = claimed?'In Review':'Pending';
+      const pillClass = claimed?'pill-progress':'pill-pending';
+      return `<tr>
+        <td class="small">${esc(r['Review Code'])}</td>
+        <td>${esc(r['full_name'])}</td>
+        <td>${esc(r['national_id'])}</td>
+        <td>${esc(r['phone_number'])}</td>
+        <td>${esc(r['activation_branch_name'])}</td>
+        <td><span class="pill ${pillClass}">${status}</span></td>
+        <td>${claimed
+            ? `<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="openReview(${x.i})">Review</button>`
+            : `<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;width:auto" onclick="claimRow(${x.i})">Claim</button>`}
+        </td>
+      </tr>`;
+    }).join('')}</tbody></table>
+  </div>`;
+}
+
+function claimRow(idx){
+  const rows = sheetToRows(SHEETS.DATA);
+  rows[idx]['Claimed By']=currentUser.Name;
+  rows[idx]['Claimed At']=new Date().toLocaleString();
+  rows[idx]['Queue Status']='In Review';
+  rowsToSheet(SHEETS.DATA, rows, Object.keys(rows[0]));
+  scheduleSave();
+  nav('myqueue');
+}
+
+const REASONS = ['Blurred / unreadable document','Mismatched name','Expired ID','Missing document','Other'];
+
+/* isEdit: reopening an already-Done submission via Search & Edit.
+   returnPage: which page to refresh after Cancel/Submit. */
+function openReview(idx, isEdit, returnPage){
+  returnPage = returnPage || 'myqueue';
+  const rows = sheetToRows(SHEETS.DATA);
+  const r = rows[idx];
+  const decision = r['Decision']||'Approved';
+  const reason = r['Non-Compliant Reason']||'';
+  const secondReview = r['Second Review']==='Yes';
+  const modal = document.createElement('div');
+  modal.className='modal-bg';
+  modal.innerHTML=`<div class="modal">
+    <h3>${isEdit?'Edit review':'Review submission'} <span class="small">${esc(r['Review Code'])}</span></h3>
+    <div class="card" style="background:var(--surface2);padding:10px;margin-bottom:12px">
+      <div class="row2" style="font-size:12px">
+        <div><b>Name</b><br>${esc(r['full_name'])}</div>
+        <div><b>National ID</b><br>${esc(r['national_id'])}</div>
+        <div><b>Phone</b><br>${esc(r['phone_number'])}</div>
+        <div><b>Branch</b><br>${esc(r['activation_branch_name'])}</div>
+      </div>
+    </div>
+    <div class="field"><label>Decision</label>
+      <select id="rv-decision">
+        <option value="Approved" ${decision==='Approved'?'selected':''}>Approved — compliant</option>
+        <option value="Rejected" ${decision==='Rejected'?'selected':''}>Rejected — non-compliant</option>
+      </select>
+    </div>
+    <div class="field" id="rv-reason-field" ${decision!=='Rejected'?'hidden':''}><label>Non-compliant reason</label>
+      <select id="rv-reason">${REASONS.map(x=>`<option ${reason===x?'selected':''}>${x}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Comment</label><textarea id="rv-comment" rows="3" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:8px">${esc(r['Reviewer Comment'])}</textarea></div>
+    <div class="field"><label><input type="checkbox" id="rv-second" ${secondReview?'checked':''} style="width:auto;vertical-align:middle;margin-right:6px"/>Flag for second review</label></div>
+    ${isEdit ? `<p class="small">Originally reviewed by ${esc(r['Reviewed By'])} on ${esc(r['Reviewed At'])}${r['Last Edited At']?` • last edited ${esc(r['Last Edited At'])} by ${esc(r['Last Edited By'])}`:''}</p>` : ''}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitReview(${idx}, this, ${isEdit?'true':'false'}, '${returnPage}')">Submit</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#rv-decision').addEventListener('change', e=>{
+    modal.querySelector('#rv-reason-field').hidden = e.target.value!=='Rejected';
+  });
+}
+
+function submitReview(idx, btn, isEdit, returnPage){
+  const modal = btn.closest('.modal-bg');
+  const decision = modal.querySelector('#rv-decision').value;
+  const reason = decision==='Rejected' ? modal.querySelector('#rv-reason').value : '';
+  const comment = modal.querySelector('#rv-comment').value;
+  const secondReview = modal.querySelector('#rv-second').checked ? 'Yes' : 'No';
+  const rows = sheetToRows(SHEETS.DATA);
+  const row = rows[idx];
+  const now = new Date().toLocaleString();
+  row['Decision']=decision;
+  row['Non-Compliant Reason']=reason;
+  row['Reviewer Comment']=comment;
+  row['Second Review']=secondReview;
+  row['Queue Status']='Done';
+  if(isEdit){
+    // update the SAME row in place — never append a duplicate — and record the edit timestamp
+    row['Last Edited By']=currentUser.Name;
+    row['Last Edited At']=now;
+  } else {
+    row['Reviewed By']=currentUser.Name;
+    row['Reviewed At']=now;
+  }
+  rowsToSheet(SHEETS.DATA, rows, Object.keys(rows[0]));
+  scheduleSave();
+  modal.remove();
+  toast(isEdit?'Review updated & saved':'Review submitted & saved — removed from queue','ok');
+  nav(returnPage);
+}
+
+/* ---------- All Submissions (read view, admin+reviewers) ---------- */
+function renderAllQueue(){
+  const rows = sheetToRows(SHEETS.DATA);
+  if(!rows.length) return `<div class="card"><div class="empty">No submissions in the Data sheet.</div></div>`;
+  return `<div class="card">
+  <div class="toolbar">
+    <input id="aq-search" placeholder="Search name / national ID / branch" oninput="filterAllQueue()"/>
+    <select id="aq-status" onchange="filterAllQueue()">
+      <option value="">All statuses</option><option>Pending</option><option>In Review</option><option>Done</option>
+    </select>
+    <button class="btn btn-outline" onclick="manualExport()">⬇ Export workbook</button>
+  </div>
+  <div id="aq-table"></div></div>`;
+}
+function filterAllQueue(){
+  const rows = sheetToRows(SHEETS.DATA);
+  const q=(document.getElementById('aq-search').value||'').toLowerCase();
+  const st=document.getElementById('aq-status').value;
+  const filtered = rows.filter(r=>{
+    const hay=(r['full_name']+' '+r['national_id']+' '+r['activation_branch_name']).toLowerCase();
+    const status = r['Queue Status']||'Pending';
+    return hay.includes(q) && (!st || status===st);
+  });
+  document.getElementById('aq-table').innerHTML = `<table><thead><tr>
+    <th>Code</th><th>Customer</th><th>National ID</th><th>Branch</th><th>Status</th><th>Decision</th><th>Reviewed By</th></tr></thead>
+    <tbody>${filtered.map(r=>{
+      const status=r['Queue Status']||'Pending';
+      const pc = status==='Done'?'pill-approved':status==='In Review'?'pill-progress':'pill-pending';
+      const dc = r['Decision']==='Rejected'?'pill-rejected':r['Decision']==='Approved'?'pill-approved':'';
+      return `<tr><td class="small">${esc(r['Review Code'])}</td><td>${esc(r['full_name'])}</td><td>${esc(r['national_id'])}</td><td>${esc(r['activation_branch_name'])}</td>
+      <td><span class="pill ${pc}">${status}</span></td>
+      <td>${r['Decision']?`<span class="pill ${dc}">${r['Decision']}</span>`:'—'}</td>
+      <td>${esc(r['Reviewed By']||'—')}</td></tr>`;
+    }).join('') || `<tr><td colspan="7" class="empty">No matches</td></tr>`}</tbody></table>`;
+}
+
+/* ---------- Search & Edit (find a past submission by Review Code / National ID and re-open its form) ---------- */
+function renderSearchEdit(){
+  return `<div class="card">
+    <div class="toolbar">
+      <input id="se-search" placeholder="Enter Review Code (e.g. DCQ-00042) or National ID" style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')runSearchEdit()"/>
+      <button class="btn btn-primary" style="width:auto" onclick="runSearchEdit()">Search</button>
+    </div>
+    <div id="se-result"><div class="empty">Search for a submission to view or edit its review.</div></div>
+  </div>`;
+}
+function runSearchEdit(){
+  const q = (document.getElementById('se-search').value||'').trim().toLowerCase();
+  const box = document.getElementById('se-result');
+  if(!q){ box.innerHTML='<div class="empty">Enter a Review Code or National ID.</div>'; return; }
+  const rows = sheetToRows(SHEETS.DATA);
+  const idx = rows.findIndex(r=> String(r['Review Code']||'').toLowerCase()===q || String(r['national_id']||'').toLowerCase()===q);
+  if(idx===-1){ box.innerHTML='<div class="empty">No submission found for "'+esc(q)+'".</div>'; return; }
+  const r = rows[idx];
+  const lut = buildLookups();
+  const {group} = enrichRow(r, lut);
+  const canEdit = currentUser.Role==='Admin' || group===currentUser.Area;
+  const status = r['Queue Status']||'Pending';
+  const pc = status==='Done'?'pill-approved':status==='In Review'?'pill-progress':'pill-pending';
+  box.innerHTML = `<table><tbody>
+    <tr><th>Review Code</th><td>${esc(r['Review Code'])}</td></tr>
+    <tr><th>Customer</th><td>${esc(r['full_name'])}</td></tr>
+    <tr><th>National ID</th><td>${esc(r['national_id'])}</td></tr>
+    <tr><th>Phone</th><td>${esc(r['phone_number'])}</td></tr>
+    <tr><th>Branch</th><td>${esc(r['activation_branch_name'])}</td></tr>
+    <tr><th>Status</th><td><span class="pill ${pc}">${status}</span></td></tr>
+    <tr><th>Decision</th><td>${esc(r['Decision']||'—')}</td></tr>
+    <tr><th>Reviewed By / At</th><td>${esc(r['Reviewed By']||'—')} ${r['Reviewed At']?'• '+esc(r['Reviewed At']):''}</td></tr>
+    <tr><th>Last Edited By / At</th><td>${esc(r['Last Edited By']||'—')} ${r['Last Edited At']?'• '+esc(r['Last Edited At']):''}</td></tr>
+  </tbody></table>
+  <div style="margin-top:12px">
+    ${canEdit
+      ? `<button class="btn btn-primary" style="width:auto" onclick="openReview(${idx}, ${status==='Done'?'true':'false'}, 'search')">${status==='Done'?'Edit review':'Open review form'}</button>`
+      : `<p class="small">This submission belongs to another review area — only ${esc(group)} reviewers or an admin can edit it.</p>`}
+  </div>`;
+}
+
+/* ---------- Reports ---------- */
+function renderReports(){
+  const lut = buildLookups();
+  const rows = sheetToRows(SHEETS.DATA);
+  const users = sheetToRows(SHEETS.USERS).filter(u=>u.Role==='Reviewer' && u.Active!=='No');
+  const byArea = {};
+  users.forEach(u=>{ byArea[u.Area]=byArea[u.Area]||{assigned:0,done:0,reviewers:[]}; byArea[u.Area].reviewers.push(u.Name); });
+  rows.forEach(r=>{
+    const {group}=enrichRow(r,lut);
+    if(byArea[group]){
+      byArea[group].assigned++;
+      if((r['Queue Status']||'')==='Done') byArea[group].done++;
+    }
+  });
+  const totalAssigned = rows.length;
+  const totalDone = rows.filter(r=>(r['Queue Status']||'')==='Done').length;
+  const kpis = `<div class="kpi-row">
+    <div class="kpi"><div class="v">${totalAssigned}</div><div class="l">Total submissions</div></div>
+    <div class="kpi"><div class="v">${totalDone}</div><div class="l">Reviewed</div></div>
+    <div class="kpi"><div class="v">${totalAssigned-totalDone}</div><div class="l">Pending</div></div>
+    <div class="kpi"><div class="v">${totalAssigned?Math.round(totalDone/totalAssigned*100):0}%</div><div class="l">Completion rate</div></div>
+  </div>`;
+  const table = `<div class="card"><table><thead><tr><th>Review Area Group</th><th>Reviewers</th><th>Assigned</th><th>Completed</th><th>Completion %</th></tr></thead>
+    <tbody>${Object.keys(byArea).map(g=>{
+      const d=byArea[g];
+      const pct = d.assigned? Math.round(d.done/d.assigned*100):0;
+      return `<tr><td>${esc(g)}</td><td class="small">${d.reviewers.join(', ')}</td><td>${d.assigned}</td><td>${d.done}</td><td>${pct}%</td></tr>`;
+    }).join('') || `<tr><td colspan="5" class="empty">No reviewer areas configured</td></tr>`}</tbody></table></div>`;
+  return kpis+table;
+}
+
+/* ---------- User Management ---------- */
+function renderUsers(){
+  const users = sheetToRows(SHEETS.USERS);
+  return `<div class="card">
+    <div class="toolbar"><button class="btn btn-primary" style="width:auto" onclick="openUserModal()">+ Add user</button></div>
+    <table><thead><tr><th>Name</th><th>Role</th><th>Area</th><th>Email</th><th>Active</th><th></th></tr></thead>
+    <tbody>${users.map((u,i)=>`<tr>
+      <td>${esc(u.Name)} ${u.Role==='Admin'?'<span class="badge-role">ADMIN</span>':''}</td>
+      <td>${esc(u.Role)}</td><td>${esc(u.Area)}</td><td>${esc(u.Email)}</td>
+      <td>${u.Active==='No'?'<span class="pill pill-rejected">Inactive</span>':'<span class="pill pill-approved">Active</span>'}</td>
+      <td><button class="btn btn-outline" style="padding:4px 9px;font-size:11px" onclick="openUserModal(${i})">Edit</button></td>
+    </tr>`).join('')}</tbody></table>
+  </div>`;
+}
+function openUserModal(idx){
+  const users = sheetToRows(SHEETS.USERS);
+  const u = idx!==undefined ? users[idx] : {Name:'',Email:'',Phone:'',NameAr:'',Area:'',PIN:'0000',Role:'Reviewer',Active:'Yes'};
+  const modal=document.createElement('div'); modal.className='modal-bg';
+  modal.innerHTML=`<div class="modal">
+    <h3>${idx!==undefined?'Edit user':'Add user'}</h3>
+    <div class="row2">
+      <div class="field"><label>Name</label><input id="um-name" value="${esc(u.Name)}"/></div>
+      <div class="field"><label>Role</label><select id="um-role"><option ${u.Role==='Reviewer'?'selected':''}>Reviewer</option><option ${u.Role==='Admin'?'selected':''}>Admin</option></select></div>
+      <div class="field"><label>Email</label><input id="um-email" value="${esc(u.Email)}"/></div>
+      <div class="field"><label>Area / Review Area Group</label><input id="um-area" value="${esc(u.Area)}" placeholder="e.g. Cairo, Upper, Alex & Delta & Canal"/></div>
+      <div class="field"><label>PIN</label><input id="um-pin" value="${esc(u.PIN)}" maxlength="8"/></div>
+      <div class="field"><label>Active</label><select id="um-active"><option ${u.Active!=='No'?'selected':''}>Yes</option><option ${u.Active==='No'?'selected':''}>No</option></select></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn btn-outline" style="flex:1" onclick="this.closest('.modal-bg').remove()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveUser(${idx===undefined?'undefined':idx}, this)">Save</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function saveUser(idx, btn){
+  const modal=btn.closest('.modal-bg');
+  const users = sheetToRows(SHEETS.USERS);
+  const data = {
+    Name: modal.querySelector('#um-name').value.trim(),
+    Email: modal.querySelector('#um-email').value.trim(),
+    Phone: idx!==undefined ? users[idx].Phone : '',
+    NameAr: idx!==undefined ? users[idx].NameAr : '',
+    Area: modal.querySelector('#um-area').value.trim(),
+    PIN: modal.querySelector('#um-pin').value.trim() || '0000',
+    Role: modal.querySelector('#um-role').value,
+    Active: modal.querySelector('#um-active').value
+  };
+  if(!data.Name){ toast('Name is required','err'); return; }
+  if(idx!==undefined) users[idx]=data; else users.push(data);
+  rowsToSheet(SHEETS.USERS, users, ['Name','Email','Phone','NameAr','Area','PIN','Role','Active']);
+  scheduleSave();
+  modal.remove();
+  toast('User saved','ok');
+  nav('users');
+}
+
+/* ---------- Sign-in Log ---------- */
+function renderSignLog(){
+  const rows = sheetToRows(SHEETS.SIGNLOG).slice().reverse();
+  return `<div class="card"><table><thead><tr><th>Timestamp</th><th>User</th><th>Action</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr><td>${esc(r.Timestamp)}</td><td>${esc(r.User)}</td><td>${esc(r.Action)}</td></tr>`).join('') || `<tr><td colspan="3" class="empty">No activity yet</td></tr>`}</tbody></table></div>`;
+}
+
+/* ---------- utils ---------- */
+function esc(v){ return v===undefined||v===null ? '' : String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function toast(msg,kind){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.className='toast show'+(kind?' '+kind:'');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+/* run filterAllQueue once when All Submissions page mounts */
+const _origNav = nav;
+nav = function(page){ _origNav(page); if(page==='allqueue') filterAllQueue(); };
+</script>
+</body>
+</html>
