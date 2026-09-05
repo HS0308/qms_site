@@ -136,14 +136,19 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
     </div>
     <div class="signin-tool-name">Quality Coaching &amp; Disputes Tool</div>
     <div class="signin-title" id="signin-title">Welcome</div>
-    <div class="signin-sub" id="signin-sub">Sign in with your name so your coaching sessions and disputes are logged automatically.</div>
+    <div class="signin-sub" id="signin-sub">Sign in with your email address so your coaching sessions and disputes are logged automatically.</div>
 
     <div class="signin-error" id="signin-error"></div>
 
-    <!-- Existing roster (loaded from the Excel workbook's Users sheet) -->
+    <!-- Email-based sign-in against the roster loaded from the Excel workbook's Users sheet -->
     <div id="signin-roster-wrap">
-      <div class="signin-roster" id="signin-roster"></div>
-      <div class="signin-link" style="margin-bottom:1rem" id="signin-admin-setup-link"><a onclick="showAddUserForm()">⚙ Set up the Admin account (first-time setup)</a></div>
+      <div class="signin-field">
+        <label>Email address</label>
+        <input type="email" id="signin-email" placeholder="you@company.com" onkeydown="if(event.key==='Enter') signInByEmail()"/>
+      </div>
+      <button class="signin-btn" onclick="signInByEmail()">Sign in</button>
+      <div class="signin-roster" id="signin-roster" style="margin-top:1rem"></div>
+      <div class="signin-link" style="margin-top:1rem;margin-bottom:1rem" id="signin-admin-setup-link"><a onclick="showAddUserForm()">⚙ Set up the Admin account (first-time setup)</a></div>
       <div class="signin-link"><a onclick="document.getElementById('signin-import-file').click()">📂 Open an existing Excel file first</a></div>
       <input type="file" id="signin-import-file" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)"/>
     </div>
@@ -152,7 +157,11 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
     <div id="signin-new-wrap" style="display:none">
       <div class="signin-field">
         <label>Admin full name</label>
-        <input type="text" id="signin-name" placeholder="e.g. Sara Mitchell" onkeydown="if(event.key==='Enter') doSignIn()"/>
+        <input type="text" id="signin-name" placeholder="e.g. Sara Mitchell"/>
+      </div>
+      <div class="signin-field">
+        <label>Admin email address</label>
+        <input type="email" id="signin-email-new" placeholder="you@company.com" onkeydown="if(event.key==='Enter') doSignIn()"/>
       </div>
       <button class="signin-btn" onclick="doSignIn()">Create Admin &amp; sign in</button>
       <div class="signin-link" id="signin-back-link" style="display:none"><a onclick="showRoster()">&larr; Back to team list</a></div>
@@ -310,6 +319,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
       <h2>Add a team member</h2>
       <div class="grid3">
         <div class="field"><label>Full name</label><input type="text" id="u-name" placeholder="e.g. Tom Fischer"/></div>
+        <div class="field"><label>Email address</label><input type="email" id="u-email" placeholder="tom.fischer@company.com"/></div>
         <div class="field"><label>Role</label>
           <select id="u-role">
             <option value="Agent">Agent</option>
@@ -319,8 +329,8 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
             <option value="Admin">Admin</option>
           </select>
         </div>
-        <div class="field" style="display:flex;align-items:flex-end"><button class="btn-p" style="width:100%" onclick="addUser()">Add user</button></div>
       </div>
+      <div style="text-align:right"><button class="btn-p" onclick="addUser()">Add user</button></div>
     </div>
     <div class="card" id="u-locked-card" style="display:none">
       <div class="info" style="margin-top:0;background:var(--amber-l);color:var(--amber)">🔒 Only an Admin can add or remove team members. Ask your Admin to sign in and manage the roster here.</div>
@@ -329,7 +339,7 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
       <h2>Team roster</h2>
       <div style="overflow-x:auto">
       <table>
-        <thead><tr><th>Name</th><th>Role</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Email</th><th>Role</th><th></th></tr></thead>
         <tbody id="u-tbody"></tbody>
       </table>
       </div>
@@ -362,10 +372,10 @@ footer{text-align:center;padding:24px;font-size:11px;color:var(--text3)}
       <ul style="font-size:13px;color:var(--text2);line-height:1.8">
         <li>Roles: <b>Agent</b>, <b>QA</b>, <b>Supervisor</b>, <b>Area Manager</b>, <b>Admin</b>.</li>
         <li>The very first person opens the app, clicks <b>⚙ Set up the Admin account</b>, and enters their name — this creates the one Admin. That link disappears once an Admin exists.</li>
-        <li>From then on, <b>only the Admin</b> can add or remove team members, from the <b>User Management</b> tab (visible only to the Admin). Everyone else just picks their name from the roster to sign in.</li>
+        <li>From then on, <b>only the Admin</b> can add or remove team members (name + email), from the <b>User Management</b> tab (visible only to the Admin). Everyone else signs in by typing their email address.</li>
       </ul>
       <h2 style="margin-top:16px">Sign-in &amp; data location</h2>
-      <p style="font-size:13px;color:var(--text2)">Sign-in is name-based (no password) purely to auto-fill and log who did what — it is not an authentication system. Nothing is written to browser storage; the current user is held only in this tab's memory and is cleared on Logout or when the tab closes. The <b>.xlsx file is the single source of truth</b>.</p>
+      <p style="font-size:13px;color:var(--text2)">Sign-in is email-based (no password) purely to auto-fill and log who did what — it is not an authentication system. Nothing is written to browser storage; the current user is held only in this tab's memory and is cleared on Logout or when the tab closes. The <b>.xlsx file is the single source of truth</b>.</p>
     </div>
   </div>
 
@@ -414,15 +424,16 @@ function roleClass(role){ return {Admin:'role-admin',Supervisor:'role-supervisor
 function isAdmin(){ return !!currentUser && currentUser.role==='Admin'; }
 function hasAdmin(){ return DATA.users.some(u=>u.role==='Admin'); }
 
-// ---------- Sign-in ----------
+// ---------- Sign-in (by email) ----------
+function normEmail(e){ return (e||'').trim().toLowerCase(); }
 function renderRoster(){
   const wrap=document.getElementById('signin-roster');
   if(!DATA.users.length){
     wrap.innerHTML='<div class="signin-empty">No team members yet. Set up the Admin account below, or open an existing workbook.</div>';
   }else{
     wrap.innerHTML=DATA.users.map(u=>`
-      <div class="signin-roster-row" onclick="signInAsUser('${u.id}')">
-        <div><div class="signin-roster-name">${esc(u.name)}</div></div>
+      <div class="signin-roster-row" onclick="document.getElementById('signin-email').value='${esc(u.email)}'; signInByEmail();">
+        <div><div class="signin-roster-name">${esc(u.name)}</div><div class="signin-roster-role" style="text-transform:none;letter-spacing:0">${esc(u.email)}</div></div>
         <span class="pill ${roleClass(u.role)}">${esc(u.role)}</span>
       </div>`).join('');
   }
@@ -434,7 +445,9 @@ function showRoster(){
   document.getElementById('signin-roster-wrap').style.display='block';
   document.getElementById('signin-new-wrap').style.display='none';
   document.getElementById('signin-title').textContent='Welcome';
-  document.getElementById('signin-sub').textContent='Sign in with your name so your coaching sessions and disputes are logged automatically.';
+  document.getElementById('signin-sub').textContent='Sign in with your email address so your coaching sessions and disputes are logged automatically.';
+  document.getElementById('signin-email').value='';
+  document.getElementById('signin-error').classList.remove('show');
 }
 function showAddUserForm(){
   if(hasAdmin()){ alert('An Admin account already exists. Ask your Admin to sign in and add you from User Management.'); return; }
@@ -444,24 +457,32 @@ function showAddUserForm(){
   document.getElementById('signin-title').textContent='Set up Admin account';
   document.getElementById('signin-sub').textContent='This creates the one Admin account for this workbook. The Admin then adds every other team member from User Management.';
   document.getElementById('signin-name').value='';
+  document.getElementById('signin-email-new').value='';
   document.getElementById('signin-error').classList.remove('show');
   document.getElementById('signin-name').focus();
 }
-function signInAsUser(id){
-  const u=DATA.users.find(x=>x.id===id); if(!u) return;
+function signInByEmail(){
+  const email=normEmail(document.getElementById('signin-email').value);
+  const errEl=document.getElementById('signin-error');
+  if(!email){ errEl.textContent='Please enter your email address.'; errEl.classList.add('show'); return; }
+  const u=DATA.users.find(x=>normEmail(x.email)===email);
+  if(!u){ errEl.textContent='That email is not in the team roster. Ask your Admin to add you first.'; errEl.classList.add('show'); return; }
+  errEl.classList.remove('show');
   currentUser=u;
   enterApp();
 }
 function doSignIn(){
   if(hasAdmin()){ showRoster(); return; } // safety net: bootstrap form should not be reachable once an Admin exists
   const name=document.getElementById('signin-name').value.trim();
+  const email=normEmail(document.getElementById('signin-email-new').value);
   const errEl=document.getElementById('signin-error');
-  if(!name){ errEl.textContent='Please enter a name.'; errEl.classList.add('show'); return; }
+  if(!name||!email){ errEl.textContent='Please enter a name and email address.'; errEl.classList.add('show'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ errEl.textContent='Please enter a valid email address.'; errEl.classList.add('show'); return; }
   errEl.classList.remove('show');
 
-  let u=DATA.users.find(x=>x.name.toLowerCase()===name.toLowerCase());
+  let u=DATA.users.find(x=>normEmail(x.email)===email);
   if(!u){
-    u={id:uid('usr'), name, role:'Admin'};
+    u={id:uid('usr'), name, email, role:'Admin'};
     DATA.users.push(u);
     autoSaveAfterChange();
   }
@@ -509,11 +530,14 @@ function showTab(name){
 function addUser(){
   if(!isAdmin()){ alert('Only the Admin can add team members.'); return; }
   const name=document.getElementById('u-name').value.trim();
+  const email=normEmail(document.getElementById('u-email').value);
   const role=document.getElementById('u-role').value;
-  if(!name){ alert('Name is required.'); return; }
-  if(DATA.users.some(u=>u.name.toLowerCase()===name.toLowerCase())){ alert('That name is already in the roster.'); return; }
-  DATA.users.push({id:uid('usr'), name, role});
+  if(!name||!email){ alert('Name and email are required.'); return; }
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ alert('Please enter a valid email address.'); return; }
+  if(DATA.users.some(u=>normEmail(u.email)===email)){ alert('That email is already in the roster.'); return; }
+  DATA.users.push({id:uid('usr'), name, email, role});
   document.getElementById('u-name').value='';
+  document.getElementById('u-email').value='';
   renderUsersTable();
   autoSaveAfterChange();
 }
@@ -530,6 +554,7 @@ function renderUsersTable(){
   tbody.innerHTML=DATA.users.map(u=>`
     <tr>
       <td>${esc(u.name)}</td>
+      <td>${esc(u.email||'—')}</td>
       <td><span class="pill ${roleClass(u.role)}">${esc(u.role)}</span></td>
       <td class="row-actions">${isAdmin()? `<button class="btn" onclick="deleteUser('${u.id}')">Remove</button>` : ''}</td>
     </tr>`).join('');
@@ -695,7 +720,7 @@ function buildWorkbook(){
     'Dispute Reason':r.reason,'Status':r.status,'Resolution Notes':r.resolutionNotes,
     'Record ID':r.id,'Submitted At':r.submittedAt
   }));
-  const userRows=DATA.users.map(u=>({'Name':u.name,'Role':u.role,'User ID':u.id}));
+  const userRows=DATA.users.map(u=>({'Name':u.name,'Email':u.email,'Role':u.role,'User ID':u.id}));
 
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ctlRows.length? ctlRows : [{}]), 'Coaching (CTL)');
@@ -726,7 +751,7 @@ function loadWorkbook(wb){
     submittedAt:r['Submitted At']||new Date().toISOString()
   }));
   DATA.users=userRows.filter(r=>r['Name']).map(r=>({
-    id:r['User ID']||uid('usr'), name:r['Name']||'', role:r['Role']||'Agent'
+    id:r['User ID']||uid('usr'), name:r['Name']||'', email:r['Email']||'', role:r['Role']||'Agent'
   }));
 }
 
