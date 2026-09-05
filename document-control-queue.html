@@ -151,6 +151,7 @@ tr:hover td{background:#FAFBFE}
       <div class="sb-lbl">Workspace</div>
       <div class="ni active" data-page="myqueue" onclick="nav('myqueue')">🗂 My Queue<span class="badge" id="nav-badge-mine" hidden>0</span></div>
       <div class="ni" data-page="allqueue" onclick="nav('allqueue')">📋 All Submissions</div>
+      <div class="ni" data-page="search" onclick="nav('search')">🔎 Search &amp; Edit</div>
       <div class="ni" data-page="reports" onclick="nav('reports')">📊 Reports</div>
       <div class="sb-lbl" id="admin-lbl" hidden>Admin</div>
       <div class="ni" id="nav-users" data-page="users" onclick="nav('users')" hidden>👥 User Management</div>
@@ -295,14 +296,12 @@ function ensureAppSheets(){
   }
   // Extend Data sheet with queue-management columns if missing
   const dataRows = sheetToRows(SHEETS.DATA);
-  const extraCols = ['Queue Status','Claimed By','Claimed At','Decision','Non-Compliant Reason','Reviewer Comment','Reviewed By','Reviewed At'];
+  const extraCols = ['Review Code','Queue Status','Claimed By','Claimed At','Decision','Non-Compliant Reason','Reviewer Comment','Second Review','Reviewed By','Reviewed At','Last Edited By','Last Edited At'];
   let changed=false;
   dataRows.forEach(r=>{ extraCols.forEach(c=>{ if(!(c in r)){ r[c]=''; changed=true; } }); });
+  // stable, human-searchable review code per row — assigned once, never reused
+  dataRows.forEach((r,i)=>{ if(!r['Review Code']){ r['Review Code']='DCQ-'+String(i+1).padStart(5,'0'); changed=true; } });
   if(changed || dataRows.length){
-    // preserve original header order + append new ones
-    const origHeaders = workbook.SheetNames.includes(SHEETS.DATA)
-      ? Object.keys(XLSX.utils.sheet_to_json(workbook.Sheets[SHEETS.DATA],{header:1})[0]||{}).map((_,i)=>i)
-      : [];
     const firstRowHeaders = dataRows.length ? Object.keys(dataRows[0]) : extraCols;
     rowsToSheet(SHEETS.DATA, dataRows, firstRowHeaders);
   }
@@ -406,11 +405,12 @@ function logSignEvent(user, action){
 /* ---------- Navigation ---------- */
 function nav(page){
   document.querySelectorAll('.ni').forEach(n=>n.classList.toggle('active', n.dataset.page===page));
-  const titles={myqueue:'My Queue', allqueue:'All Submissions', reports:'Reports', users:'User Management', signlog:'Sign-in Log'};
+  const titles={myqueue:'My Queue', allqueue:'All Submissions', search:'Search & Edit', reports:'Reports', users:'User Management', signlog:'Sign-in Log'};
   document.getElementById('page-title').textContent = titles[page];
   const c = document.getElementById('content');
   if(page==='myqueue') c.innerHTML = renderMyQueue();
   if(page==='allqueue') c.innerHTML = renderAllQueue();
+  if(page==='search') c.innerHTML = renderSearchEdit();
   if(page==='reports') c.innerHTML = renderReports();
   if(page==='users') c.innerHTML = renderUsers();
   if(page==='signlog') c.innerHTML = renderSignLog();
@@ -440,13 +440,13 @@ function renderMyQueue(){
   if(!myRows.length) return `<div class="card"><div class="empty">Your queue is empty 🎉<br><span class="small">Nothing assigned to your area (${currentUser.Area||'—'}) right now.</span></div></div>`;
 
   return `<div class="card">
-    <table><thead><tr><th>Customer</th><th>National ID</th><th>Phone</th><th>Branch</th><th>Status</th><th></th></tr></thead>
+    <table><thead><tr><th>Code</th><th>Customer</th><th>National ID</th><th>Phone</th><th>Branch</th><th>Status</th><th></th></tr></thead>
     <tbody>${myRows.map(x=>{
       const r=x.r, claimed = r['Claimed By']===currentUser.Name;
       const status = claimed?'In Review':'Pending';
       const pillClass = claimed?'pill-progress':'pill-pending';
-      const link = r['Review Link']||'';
       return `<tr>
+        <td class="small">${esc(r['Review Code'])}</td>
         <td>${esc(r['full_name'])}</td>
         <td>${esc(r['national_id'])}</td>
         <td>${esc(r['phone_number'])}</td>
@@ -455,7 +455,6 @@ function renderMyQueue(){
         <td>${claimed
             ? `<button class="btn btn-outline" style="padding:5px 10px;font-size:11px" onclick="openReview(${x.i})">Review</button>`
             : `<button class="btn btn-primary" style="padding:5px 10px;font-size:11px;width:auto" onclick="claimRow(${x.i})">Claim</button>`}
-           ${link?` <a href="${esc(link)}" target="_blank" class="link-txt">Open Form ↗</a>`:''}
         </td>
       </tr>`;
     }).join('')}</tbody></table>
@@ -472,30 +471,44 @@ function claimRow(idx){
   nav('myqueue');
 }
 
-function openReview(idx){
+const REASONS = ['Blurred / unreadable document','Mismatched name','Expired ID','Missing document','Other'];
+
+/* isEdit: reopening an already-Done submission via Search & Edit.
+   returnPage: which page to refresh after Cancel/Submit. */
+function openReview(idx, isEdit, returnPage){
+  returnPage = returnPage || 'myqueue';
   const rows = sheetToRows(SHEETS.DATA);
   const r = rows[idx];
+  const decision = r['Decision']||'Approved';
+  const reason = r['Non-Compliant Reason']||'';
+  const secondReview = r['Second Review']==='Yes';
   const modal = document.createElement('div');
   modal.className='modal-bg';
   modal.innerHTML=`<div class="modal">
-    <h3>Review submission</h3>
-    <p class="small" style="margin-bottom:10px">${esc(r['full_name'])} • ${esc(r['national_id'])} • ${esc(r['activation_branch_name'])}</p>
-    <div class="field"><label>Decision</label>
-      <select id="rv-decision"><option value="Approved">Approved — compliant</option><option value="Rejected">Rejected — non-compliant</option></select>
+    <h3>${isEdit?'Edit review':'Review submission'} <span class="small">${esc(r['Review Code'])}</span></h3>
+    <div class="card" style="background:var(--surface2);padding:10px;margin-bottom:12px">
+      <div class="row2" style="font-size:12px">
+        <div><b>Name</b><br>${esc(r['full_name'])}</div>
+        <div><b>National ID</b><br>${esc(r['national_id'])}</div>
+        <div><b>Phone</b><br>${esc(r['phone_number'])}</div>
+        <div><b>Branch</b><br>${esc(r['activation_branch_name'])}</div>
+      </div>
     </div>
-    <div class="field" id="rv-reason-field" hidden><label>Non-compliant reason</label>
-      <select id="rv-reason">
-        <option>Blurred / unreadable document</option>
-        <option>Mismatched name</option>
-        <option>Expired ID</option>
-        <option>Missing document</option>
-        <option>Other</option>
+    <div class="field"><label>Decision</label>
+      <select id="rv-decision">
+        <option value="Approved" ${decision==='Approved'?'selected':''}>Approved — compliant</option>
+        <option value="Rejected" ${decision==='Rejected'?'selected':''}>Rejected — non-compliant</option>
       </select>
     </div>
-    <div class="field"><label>Comment</label><textarea id="rv-comment" rows="3" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:8px"></textarea></div>
+    <div class="field" id="rv-reason-field" ${decision!=='Rejected'?'hidden':''}><label>Non-compliant reason</label>
+      <select id="rv-reason">${REASONS.map(x=>`<option ${reason===x?'selected':''}>${x}</option>`).join('')}</select>
+    </div>
+    <div class="field"><label>Comment</label><textarea id="rv-comment" rows="3" style="width:100%;padding:8px;border:1px solid var(--bdr);border-radius:8px">${esc(r['Reviewer Comment'])}</textarea></div>
+    <div class="field"><label><input type="checkbox" id="rv-second" ${secondReview?'checked':''} style="width:auto;vertical-align:middle;margin-right:6px"/>Flag for second review</label></div>
+    ${isEdit ? `<p class="small">Originally reviewed by ${esc(r['Reviewed By'])} on ${esc(r['Reviewed At'])}${r['Last Edited At']?` • last edited ${esc(r['Last Edited At'])} by ${esc(r['Last Edited By'])}`:''}</p>` : ''}
     <div style="display:flex;gap:8px;margin-top:8px">
       <button class="btn btn-outline" style="flex:1" onclick="this.closest('.modal-bg').remove()">Cancel</button>
-      <button class="btn btn-primary" style="flex:1" onclick="submitReview(${idx}, this)">Submit</button>
+      <button class="btn btn-primary" style="flex:1" onclick="submitReview(${idx}, this, ${isEdit?'true':'false'}, '${returnPage}')">Submit</button>
     </div>
   </div>`;
   document.body.appendChild(modal);
@@ -504,23 +517,33 @@ function openReview(idx){
   });
 }
 
-function submitReview(idx, btn){
+function submitReview(idx, btn, isEdit, returnPage){
   const modal = btn.closest('.modal-bg');
   const decision = modal.querySelector('#rv-decision').value;
   const reason = decision==='Rejected' ? modal.querySelector('#rv-reason').value : '';
   const comment = modal.querySelector('#rv-comment').value;
+  const secondReview = modal.querySelector('#rv-second').checked ? 'Yes' : 'No';
   const rows = sheetToRows(SHEETS.DATA);
-  rows[idx]['Decision']=decision;
-  rows[idx]['Non-Compliant Reason']=reason;
-  rows[idx]['Reviewer Comment']=comment;
-  rows[idx]['Reviewed By']=currentUser.Name;
-  rows[idx]['Reviewed At']=new Date().toLocaleString();
-  rows[idx]['Queue Status']='Done';
+  const row = rows[idx];
+  const now = new Date().toLocaleString();
+  row['Decision']=decision;
+  row['Non-Compliant Reason']=reason;
+  row['Reviewer Comment']=comment;
+  row['Second Review']=secondReview;
+  row['Queue Status']='Done';
+  if(isEdit){
+    // update the SAME row in place — never append a duplicate — and record the edit timestamp
+    row['Last Edited By']=currentUser.Name;
+    row['Last Edited At']=now;
+  } else {
+    row['Reviewed By']=currentUser.Name;
+    row['Reviewed At']=now;
+  }
   rowsToSheet(SHEETS.DATA, rows, Object.keys(rows[0]));
   scheduleSave();
   modal.remove();
-  toast('Review submitted & saved','ok');
-  nav('myqueue');
+  toast(isEdit?'Review updated & saved':'Review submitted & saved — removed from queue','ok');
+  nav(returnPage);
 }
 
 /* ---------- All Submissions (read view, admin+reviewers) ---------- */
@@ -547,16 +570,57 @@ function filterAllQueue(){
     return hay.includes(q) && (!st || status===st);
   });
   document.getElementById('aq-table').innerHTML = `<table><thead><tr>
-    <th>Customer</th><th>National ID</th><th>Branch</th><th>Status</th><th>Decision</th><th>Reviewed By</th></tr></thead>
+    <th>Code</th><th>Customer</th><th>National ID</th><th>Branch</th><th>Status</th><th>Decision</th><th>Reviewed By</th></tr></thead>
     <tbody>${filtered.map(r=>{
       const status=r['Queue Status']||'Pending';
       const pc = status==='Done'?'pill-approved':status==='In Review'?'pill-progress':'pill-pending';
       const dc = r['Decision']==='Rejected'?'pill-rejected':r['Decision']==='Approved'?'pill-approved':'';
-      return `<tr><td>${esc(r['full_name'])}</td><td>${esc(r['national_id'])}</td><td>${esc(r['activation_branch_name'])}</td>
+      return `<tr><td class="small">${esc(r['Review Code'])}</td><td>${esc(r['full_name'])}</td><td>${esc(r['national_id'])}</td><td>${esc(r['activation_branch_name'])}</td>
       <td><span class="pill ${pc}">${status}</span></td>
       <td>${r['Decision']?`<span class="pill ${dc}">${r['Decision']}</span>`:'—'}</td>
       <td>${esc(r['Reviewed By']||'—')}</td></tr>`;
-    }).join('') || `<tr><td colspan="6" class="empty">No matches</td></tr>`}</tbody></table>`;
+    }).join('') || `<tr><td colspan="7" class="empty">No matches</td></tr>`}</tbody></table>`;
+}
+
+/* ---------- Search & Edit (find a past submission by Review Code / National ID and re-open its form) ---------- */
+function renderSearchEdit(){
+  return `<div class="card">
+    <div class="toolbar">
+      <input id="se-search" placeholder="Enter Review Code (e.g. DCQ-00042) or National ID" style="flex:1;min-width:260px" onkeydown="if(event.key==='Enter')runSearchEdit()"/>
+      <button class="btn btn-primary" style="width:auto" onclick="runSearchEdit()">Search</button>
+    </div>
+    <div id="se-result"><div class="empty">Search for a submission to view or edit its review.</div></div>
+  </div>`;
+}
+function runSearchEdit(){
+  const q = (document.getElementById('se-search').value||'').trim().toLowerCase();
+  const box = document.getElementById('se-result');
+  if(!q){ box.innerHTML='<div class="empty">Enter a Review Code or National ID.</div>'; return; }
+  const rows = sheetToRows(SHEETS.DATA);
+  const idx = rows.findIndex(r=> String(r['Review Code']||'').toLowerCase()===q || String(r['national_id']||'').toLowerCase()===q);
+  if(idx===-1){ box.innerHTML='<div class="empty">No submission found for "'+esc(q)+'".</div>'; return; }
+  const r = rows[idx];
+  const lut = buildLookups();
+  const {group} = enrichRow(r, lut);
+  const canEdit = currentUser.Role==='Admin' || group===currentUser.Area;
+  const status = r['Queue Status']||'Pending';
+  const pc = status==='Done'?'pill-approved':status==='In Review'?'pill-progress':'pill-pending';
+  box.innerHTML = `<table><tbody>
+    <tr><th>Review Code</th><td>${esc(r['Review Code'])}</td></tr>
+    <tr><th>Customer</th><td>${esc(r['full_name'])}</td></tr>
+    <tr><th>National ID</th><td>${esc(r['national_id'])}</td></tr>
+    <tr><th>Phone</th><td>${esc(r['phone_number'])}</td></tr>
+    <tr><th>Branch</th><td>${esc(r['activation_branch_name'])}</td></tr>
+    <tr><th>Status</th><td><span class="pill ${pc}">${status}</span></td></tr>
+    <tr><th>Decision</th><td>${esc(r['Decision']||'—')}</td></tr>
+    <tr><th>Reviewed By / At</th><td>${esc(r['Reviewed By']||'—')} ${r['Reviewed At']?'• '+esc(r['Reviewed At']):''}</td></tr>
+    <tr><th>Last Edited By / At</th><td>${esc(r['Last Edited By']||'—')} ${r['Last Edited At']?'• '+esc(r['Last Edited At']):''}</td></tr>
+  </tbody></table>
+  <div style="margin-top:12px">
+    ${canEdit
+      ? `<button class="btn btn-primary" style="width:auto" onclick="openReview(${idx}, ${status==='Done'?'true':'false'}, 'search')">${status==='Done'?'Edit review':'Open review form'}</button>`
+      : `<p class="small">This submission belongs to another review area — only ${esc(group)} reviewers or an admin can edit it.</p>`}
+  </div>`;
 }
 
 /* ---------- Reports ---------- */
